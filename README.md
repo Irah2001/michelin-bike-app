@@ -1,5 +1,15 @@
 # 🚴‍♂️ Michelin Bike App
 
+<!-- Badges CI & Statut -->
+[![CI - Build](https://github.com/Irah2001/michelin-bike-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Irah2001/michelin-bike-app/actions)
+
+<!-- Badges Stack Technique -->
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+
 ## 🛠 Stack Technique
 
 - Frontend (Mobile-First) : React, Vite, TypeScript, Tailwind CSS v4
