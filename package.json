@@ -1,0 +1,15 @@
+{
+  "name": "michelin-bike-app",
+  "version": "1.0.0",
+  "description": "Monorepo Michelin Bike App",
+  "scripts": {
+    "start:db": "docker-compose up -d",
+    "stop:db": "docker-compose down",
+    "start:backend": "cd backend && npm run start:dev",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev": "npm run start:db && concurrently -c \"blue,green\" -n \"BACKEND,FRONTEND\" \"npm run start:backend\" \"npm run start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
