@@ -7,3 +7,8 @@ export { UserBadge } from './user-badge.entity';
 export { Challenge } from './challenge.entity';
 export { ChallengeParticipant } from './challenge-participant.entity';
 export { Level } from './level.entity';
+export { Sensor } from './sensor.entity';
+export { Ride } from './ride.entity';
+export { SensorReading } from './sensor-reading.entity';
+export { RideReading } from './ride-reading.entity';
+export { WearEstimate } from './wear-estimate.entity';

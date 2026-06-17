@@ -4,13 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StravaModule } from './strava/strava.module';
+import { SimulatorModule } from './simulator/simulator.module';
 import { AuthController } from './auth.controller';
 import { UsersController } from './users.controller';
 import { SensorDataController } from './sensor-data.controller';
 import { TiresController } from './tires.controller';
 import { CatalogController } from './catalog.controller';
 import { ChallengesController } from './challenges.controller';
-import { User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level } from './entities';
+import {
+  User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
+  Sensor, Ride, SensorReading, RideReading, WearEstimate,
+} from './entities';
 
 @Module({
   imports: [
@@ -24,11 +28,15 @@ import { User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, Challen
         username: config.get('DB_USER', 'michelin_admin'),
         password: config.get('DB_PASSWORD', 'michelin_password'),
         database: config.get('DB_NAME', 'michelin_bike_db'),
-        entities: [User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level],
+        entities: [
+          User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
+          Sensor, Ride, SensorReading, RideReading, WearEstimate,
+        ],
         synchronize: true,
       }),
     }),
     StravaModule,
+    SimulatorModule,
   ],
   controllers: [AppController, AuthController, UsersController, SensorDataController, TiresController, CatalogController, ChallengesController],
   providers: [AppService],
