@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StravaModule } from './strava/strava.module';
-import { AuthController } from './auth.controller';
+import { AuthModule } from './auth.module';
 import { UsersController } from './users.controller';
 import { SensorDataController } from './sensor-data.controller';
 import { TiresController } from './tires.controller';
@@ -29,8 +29,9 @@ import { User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, Challen
       }),
     }),
     StravaModule,
+    AuthModule,
   ],
-  controllers: [AppController, AuthController, UsersController, SensorDataController, TiresController, CatalogController, ChallengesController],
+  controllers: [AppController, UsersController, SensorDataController, TiresController, CatalogController, ChallengesController],
   providers: [AppService],
 })
 export class AppModule {}
