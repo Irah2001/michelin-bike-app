@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { StravaController } from './strava.controller';
-import { StravaService } from './strava.service';
-import { User } from '../entities/user.entity';
+import { UsersController } from './users.controller';
+import { User } from './entities/user.entity';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { User } from '../entities/user.entity';
       }),
     }),
   ],
-  controllers: [StravaController],
-  providers: [StravaService],
+  controllers: [UsersController],
+  providers: [JwtAuthGuard],
 })
-export class StravaModule {}
+export class UsersModule {}

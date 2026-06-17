@@ -5,7 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StravaModule } from './strava/strava.module';
 import { AuthModule } from './auth.module';
-import { UsersController } from './users.controller';
+import { UsersModule } from './users.module';
 import { SensorDataController } from './sensor-data.controller';
 import { TiresController } from './tires.controller';
 import { CatalogController } from './catalog.controller';
@@ -30,8 +30,9 @@ import { User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, Challen
     }),
     StravaModule,
     AuthModule,
+    UsersModule,
   ],
-  controllers: [AppController, UsersController, SensorDataController, TiresController, CatalogController, ChallengesController],
+  controllers: [AppController, SensorDataController, TiresController, CatalogController, ChallengesController],
   providers: [AppService],
 })
 export class AppModule {}
