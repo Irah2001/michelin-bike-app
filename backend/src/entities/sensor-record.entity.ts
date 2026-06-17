@@ -2,8 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDa
 import { User } from './user.entity';
 import { Tire } from './tire.entity';
 
-@Entity('rides')
-export class Ride {
+@Entity('sensor_records')
+export class SensorRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -13,20 +13,14 @@ export class Ride {
   @Column({ nullable: true })
   tire_id: string;
 
-  // Source
-  @Column({ default: 'manual' })
+  // Source de la remontée
+  @Column({ default: 'sensor' }) // 'sensor' | 'strava'
   source: string;
 
   @Column({ type: 'bigint', unique: true, nullable: true })
   strava_activity_id: string;
 
-  // Données sortie
-  @Column({ nullable: true })
-  name: string;
-
-  @Column({ nullable: true })
-  sport_type: string;
-
+  // Données remontées
   @Column({ type: 'real' })
   distance_km: number;
 
@@ -42,10 +36,6 @@ export class Ride {
   @Column({ nullable: true })
   duration_seconds: number;
 
-  @Column({ nullable: true })
-  elapsed_seconds: number;
-
-  // Données enrichies Strava
   @Column({ type: 'real', nullable: true })
   avg_watts: number;
 
@@ -61,32 +51,22 @@ export class Ride {
   @Column({ type: 'real', nullable: true })
   avg_temp: number;
 
-  // Géo
-  @Column({ type: 'real', nullable: true })
-  start_lat: number;
-
-  @Column({ type: 'real', nullable: true })
-  start_lng: number;
-
-  @Column({ type: 'text', nullable: true })
-  polyline: string;
-
   // Gamification
   @Column({ default: 0 })
   xp_earned: number;
 
   // Dates
   @Column({ type: 'timestamp' })
-  ride_date: Date;
+  recorded_at: Date;
 
   @CreateDateColumn()
   synced_at: Date;
 
-  @ManyToOne(() => User, (user) => user.rides, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.sensor_records, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Tire, (tire) => tire.rides, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Tire, (tire) => tire.sensor_records, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'tire_id' })
   tire: Tire;
 }

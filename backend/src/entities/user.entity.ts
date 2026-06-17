@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { Tire } from './tire.entity';
-import { Ride } from './ride.entity';
+import { SensorRecord } from './sensor-record.entity';
 import { UserBadge } from './user-badge.entity';
 import { Challenge } from './challenge.entity';
 import { ChallengeParticipant } from './challenge-participant.entity';
@@ -69,8 +69,8 @@ export class User {
   @OneToMany(() => Tire, (tire) => tire.user)
   tires: Tire[];
 
-  @OneToMany(() => Ride, (ride) => ride.user)
-  rides: Ride[];
+  @OneToMany(() => SensorRecord, (sr) => sr.user)
+  sensor_records: SensorRecord[];
 
   @OneToMany(() => UserBadge, (ub) => ub.user)
   user_badges: UserBadge[];

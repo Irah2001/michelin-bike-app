@@ -1,7 +1,7 @@
 export { User } from './user.entity';
 export { Catalog } from './catalog.entity';
 export { Tire } from './tire.entity';
-export { Ride } from './ride.entity';
+export { SensorRecord } from './sensor-record.entity';
 export { Badge } from './badge.entity';
 export { UserBadge } from './user-badge.entity';
 export { Challenge } from './challenge.entity';

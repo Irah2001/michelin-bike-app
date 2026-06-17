@@ -10,7 +10,7 @@ import { SensorDataController } from './sensor-data.controller';
 import { TiresController } from './tires.controller';
 import { CatalogController } from './catalog.controller';
 import { ChallengesController } from './challenges.controller';
-import { User, Catalog, Tire, Ride, Badge, UserBadge, Challenge, ChallengeParticipant, Level } from './entities';
+import { User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level } from './entities';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { User, Catalog, Tire, Ride, Badge, UserBadge, Challenge, ChallengePartic
         username: config.get('DB_USER', 'michelin_admin'),
         password: config.get('DB_PASSWORD', 'michelin_password'),
         database: config.get('DB_NAME', 'michelin_bike_db'),
-        entities: [User, Catalog, Tire, Ride, Badge, UserBadge, Challenge, ChallengeParticipant, Level],
+        entities: [User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level],
         synchronize: true,
       }),
     }),

@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Catalog } from './catalog.entity';
-import { Ride } from './ride.entity';
+import { SensorRecord } from './sensor-record.entity';
 
 @Entity('tires')
 export class Tire {
@@ -34,6 +34,6 @@ export class Tire {
   @JoinColumn({ name: 'catalog_id' })
   catalog: Catalog;
 
-  @OneToMany(() => Ride, (ride) => ride.tire)
-  rides: Ride[];
+  @OneToMany(() => SensorRecord, (sr) => sr.tire)
+  sensor_records: SensorRecord[];
 }
