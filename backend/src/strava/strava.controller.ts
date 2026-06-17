@@ -13,7 +13,12 @@ export class StravaController {
 
   @Get('callback')
   async callback(@Query('code') code: string) {
-    return this.stravaService.exchangeToken(code);
+    const tokenData = await this.stravaService.exchangeToken(code);
+    const user = await this.stravaService.findOrCreateUser(tokenData);
+    return {
+      user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url },
+      access_token: tokenData.access_token,
+    };
   }
 
   @Get('refresh')
