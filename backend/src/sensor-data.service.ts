@@ -22,13 +22,17 @@ export class SensorDataService {
     private badgesService: BadgesService,
   ) {}
 
-  async findAll(userId: string, page = 1, limit = 20) {
-    const [data, total] = await this.recordRepo.findAndCount({
-      where: { user_id: userId },
-      order: { recorded_at: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+  async findAll(userId: string, page = 1, limit = 20, since?: string) {
+    const qb = this.recordRepo.createQueryBuilder('r')
+      .where('r.user_id = :userId', { userId })
+      .orderBy('r.recorded_at', 'DESC');
+
+    if (since) {
+      qb.andWhere('r.recorded_at >= :since', { since: new Date(since) });
+    }
+
+    const total = await qb.getCount();
+    const data = await qb.skip((page - 1) * limit).take(limit).getMany();
     return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
@@ -131,10 +135,18 @@ export class SensorDataService {
     if (elevationM > user.best_elevation_m) user.best_elevation_m = elevationM;
     // XP: 10 per km
     user.xp += Math.round(distanceKm * 10);
-    // Level up every 1000 xp
-    const levels = ['Rookie', 'Rider', 'Sportif', 'Expert', 'Pro', 'Légende'];
-    user.level = Math.min(levels.length, Math.floor(user.xp / 1000) + 1);
-    user.level_name = levels[user.level - 1] || 'Légende';
+    // Level up with progressive difficulty
+    const levels = [
+      { name: 'Rookie', xp: 0 },
+      { name: 'Rider', xp: 2000 },
+      { name: 'Sportif', xp: 5000 },
+      { name: 'Expert', xp: 10000 },
+      { name: 'Pro', xp: 20000 },
+      { name: 'Légende', xp: 50000 },
+    ];
+    const currentLevel = levels.filter(l => user.xp >= l.xp).length;
+    user.level = Math.min(levels.length, currentLevel);
+    user.level_name = levels[user.level - 1]?.name || 'Légende';
     await this.userRepo.save(user);
   }
 

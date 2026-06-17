@@ -16,14 +16,13 @@ export class StravaController {
   }
 
   @Get('callback')
+  @Redirect()
   async callback(@Query('code') code: string) {
     const tokenData = await this.stravaService.exchangeToken(code);
     const user = await this.stravaService.findOrCreateUser(tokenData);
     const access_token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return {
-      user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url },
-      access_token,
-    };
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return { url: `${frontendUrl}/strava/callback?token=${access_token}` };
   }
 
   @Get('refresh')

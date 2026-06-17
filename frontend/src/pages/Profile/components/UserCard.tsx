@@ -1,15 +1,42 @@
-import { MapPin, Check } from 'lucide-react';
+import { useState } from 'react';
+import { MapPin, Check, Camera } from 'lucide-react';
 import { LiquidGlassCard } from '../../../components/ui/LiquidGlassCard';
 import type { UserProfile } from '../../../types';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
 export function UserCard({ user }: { user: UserProfile }) {
+    const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
+
+    const handleAvatarChange = () => {
+        const url = prompt('URL de votre nouvelle photo de profil :', avatarUrl || '');
+        if (url === null) return;
+        const token = localStorage.getItem('token');
+        fetch(`${BACKEND_URL}/users/me`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ avatar_url: url }),
+        })
+            .then(r => r.json())
+            .then(() => setAvatarUrl(url));
+    };
+
     return (
         <LiquidGlassCard className="rounded-4xl p-5">
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-15 h-15 shrink-0 rounded-full border-[3px] border-[#FCE500] flex items-center justify-center bg-[#FCE500]/30 text-white font-extrabold text-2xl tracking-tight shadow-inner">
-                        {user.initials}
-                    </div>
+                    <button onClick={handleAvatarChange} className="relative group w-15 h-15 shrink-0">
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt="avatar" className="w-15 h-15 rounded-full border-[3px] border-[#FCE500] object-cover" />
+                        ) : (
+                            <div className="w-15 h-15 rounded-full border-[3px] border-[#FCE500] flex items-center justify-center bg-[#FCE500]/30 text-white font-extrabold text-2xl tracking-tight shadow-inner">
+                                {user.initials}
+                            </div>
+                        )}
+                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Camera size={16} className="text-white" />
+                        </div>
+                    </button>
                     <div>
                         <h2 className="font-bold text-lg leading-tight">
                             {user.firstName} {user.lastName}
@@ -21,7 +48,7 @@ export function UserCard({ user }: { user: UserProfile }) {
                     </div>
                 </div>
                 <div className="bg-[#FCE500] text-black font-bold text-xs px-3 py-2 rounded-xl text-center leading-tight">
-                    NIV. {user.level} <br />{user.title}
+                    NIV. {user.level}<br />{user.title}
                 </div>
             </div>
 

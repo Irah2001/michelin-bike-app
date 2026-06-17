@@ -11,6 +11,8 @@ export interface UserProfile {
   isCertified: boolean;
   badge?: string;
   sensorType: string;
+  avatarUrl?: string;
+  levelImage?: string;
 }
 
 export interface UserStats {
@@ -24,5 +26,10 @@ export interface Badge {
   id: string;
   iconName: string;
   label: string;
+  description?: string;
   unlocked: boolean;
+  progress?: number;
+  current?: number;
+  target?: number;
+  unit?: string;
 }

@@ -15,10 +15,11 @@ export class SensorDataController {
   @ApiOperation({ summary: 'Historique des remontées (capteur + Strava)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@Req() req: any, @Query('page') page?: string, @Query('limit') limit?: string) {
+  @ApiQuery({ name: 'since', required: false, description: 'ISO date to filter from' })
+  findAll(@Req() req: any, @Query('page') page?: string, @Query('limit') limit?: string, @Query('since') since?: string) {
     const p = Math.max(1, Number(page) || 1);
     const l = Math.min(100, Math.max(1, Number(limit) || 20));
-    return this.service.findAll(req.user.sub, p, l);
+    return this.service.findAll(req.user.sub, p, l, since);
   }
 
   @Post()

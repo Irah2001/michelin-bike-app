@@ -3,6 +3,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { Badge } from './entities/badge.entity';
+import { UserBadge } from './entities/user-badge.entity';
+import { SensorRecord } from './entities/sensor-record.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UpdateUserDto } from './dto/users.dto';
 
@@ -22,6 +25,61 @@ export class UsersController {
     });
     if (!user) throw new NotFoundException();
     return this.formatProfile(user);
+  }
+
+  @Get('me/badges')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tous les badges avec progression' })
+  async getMyBadges(@Req() req: any) {
+    const allBadges = await this.userRepo.manager.find(Badge);
+    const userBadges = await this.userRepo.manager.find(UserBadge, { where: { user_id: req.user.sub } });
+    const user = await this.userRepo.findOne({ where: { id: req.user.sub } });
+    const records = await this.userRepo.manager.count(SensorRecord, { where: { user_id: req.user.sub } });
+    const totalKmResult = await this.userRepo.manager
+      .createQueryBuilder(SensorRecord, 'r')
+      .where('r.user_id = :id', { id: req.user.sub })
+      .select('COALESCE(SUM(r.distance_km), 0)', 'total')
+      .getRawOne();
+    const totalKm = Number(totalKmResult?.total || 0);
+
+    const unlockedIds = new Set(userBadges.map(ub => ub.badge_id));
+
+    return allBadges.map(badge => {
+      const unlocked = unlockedIds.has(badge.id);
+      let progress = 0;
+      let currentValue = 0;
+      const targetValue = badge.condition_value;
+
+      if (user) {
+        switch (badge.condition_type) {
+          case 'total_km': currentValue = Math.round(totalKm); break;
+          case 'total_rides': currentValue = records; break;
+          case 'single_distance': currentValue = Math.round(user.best_distance_km); break;
+          case 'single_elevation': currentValue = Math.round(user.best_elevation_m); break;
+          case 'xp': currentValue = user.xp; break;
+          case 'level': currentValue = user.level; break;
+        }
+        progress = unlocked ? 100 : Math.min(100, (currentValue / targetValue) * 100);
+      }
+
+      const unit = badge.condition_type === 'total_km' || badge.condition_type === 'single_distance' ? 'km'
+        : badge.condition_type === 'single_elevation' ? 'm'
+        : badge.condition_type === 'xp' ? 'XP'
+        : '';
+
+      return {
+        id: badge.id,
+        name: badge.name,
+        description: badge.description,
+        image_url: badge.image_url,
+        unlocked,
+        progress: Math.round(progress),
+        current: Math.min(currentValue, targetValue),
+        target: targetValue,
+        unit,
+      };
+    });
   }
 
   @Patch('me')
@@ -78,10 +136,10 @@ export class UsersController {
     return {
       id: user.id,
       name: user.name,
-      avatar_url: user.avatar_url,
-      country: user.country,
-      region: user.region,
-      city: user.city,
+      avatar_url: user.avatar_url || undefined,
+      country: user.country || undefined,
+      region: user.region || undefined,
+      city: user.city || undefined,
       xp: user.xp,
       level: user.level,
       level_name: user.level_name,

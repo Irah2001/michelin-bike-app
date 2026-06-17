@@ -4,7 +4,7 @@ import { StatCard } from './components/StatCard';
 import { BadgeCard } from './components/BadgeCard';
 import { UserCard } from './components/UserCard';
 import { useProfileData } from '../../hooks/useProfileData';
-import { PROFILE_TABS, MOCK_BADGES } from '../../constants';
+import { PROFILE_TABS } from '../../constants';
 
 const iconMap: Record<string, React.ReactNode> = {
     Trophy: <Trophy size={24} />,
@@ -17,7 +17,7 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export default function Profile() {
     const [activeTab, setActiveTab] = useState<(typeof PROFILE_TABS)[number]>('All-time');
-    const { user, stats, isLoading } = useProfileData();
+    const { user, stats, badges, isLoading } = useProfileData(activeTab);
 
     if (isLoading || !user || !stats) {
         return (
@@ -76,17 +76,22 @@ export default function Profile() {
                     <div className="flex justify-between items-end">
                         <h3 className="text-xl font-bold tracking-tight">Badges</h3>
                         <span className="text-[#FCE500] text-sm font-semibold">
-                            {MOCK_BADGES.filter(b => b.unlocked).length} / {MOCK_BADGES.length} débloqués
+                            {badges.filter(b => b.unlocked).length} / {badges.length} débloqués
                         </span>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                        {MOCK_BADGES.map((badge) => (
+                        {badges.map((badge) => (
                             <BadgeCard
                                 key={badge.id}
-                                icon={iconMap[badge.iconName]}
+                                icon={iconMap[badge.iconName] || <Trophy size={24} />}
                                 label={badge.label}
+                                description={badge.description}
                                 unlocked={badge.unlocked}
+                                progress={badge.progress}
+                                current={badge.current}
+                                target={badge.target}
+                                unit={badge.unit}
                             />
                         ))}
                     </div>
