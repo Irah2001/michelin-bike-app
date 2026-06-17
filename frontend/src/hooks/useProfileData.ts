@@ -5,6 +5,24 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 type Period = 'Semaine' | 'Mois' | 'Saison' | 'All-time';
 
+interface SensorRecord {
+  distance_km: number;
+  elevation_m: number | null;
+  max_speed: number | null;
+  duration_seconds: number | null;
+}
+
+interface ApiBadge {
+  id: string;
+  name: string;
+  description: string;
+  unlocked: boolean;
+  progress: number;
+  current: number;
+  target: number;
+  unit: string;
+}
+
 function getSinceDate(period: Period): string | undefined {
   const now = new Date();
   switch (period) {
@@ -16,24 +34,35 @@ function getSinceDate(period: Period): string | undefined {
 }
 
 export function useProfileData(period: Period = 'All-time') {
-  const [isLoading, setIsLoading] = useState(true);
+  const hasToken = Boolean(localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(hasToken);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) { setIsLoading(false); return; }
+    if (!token) return;
 
     const headers = { Authorization: `Bearer ${token}` };
+    let cancelled = false;
 
-    Promise.all([
-      fetch(`${BACKEND_URL}/users/me`, { headers }).then(r => r.json()),
-      fetch(`${BACKEND_URL}/sensor-data?limit=100${getSinceDate(period) ? `&since=${getSinceDate(period)}` : ''}`, { headers }).then(r => r.json()),
-      fetch(`${BACKEND_URL}/users/me/badges`, { headers }).then(r => r.json()),
-    ])
-      .then(([profile, sensorData, allBadges]) => {
-        const names = profile.name?.split(' ') || ['?'];
+    const fetchData = async () => {
+      try {
+        const since = getSinceDate(period);
+        const [profileRes, sensorRes, badgesRes] = await Promise.all([
+          fetch(`${BACKEND_URL}/users/me`, { headers }),
+          fetch(`${BACKEND_URL}/sensor-data?limit=100${since ? `&since=${since}` : ''}`, { headers }),
+          fetch(`${BACKEND_URL}/users/me/badges`, { headers }),
+        ]);
+
+        const profile = await profileRes.json();
+        const sensorData = await sensorRes.json();
+        const allBadges = await badgesRes.json();
+
+        if (cancelled) return;
+
+        const names: string[] = profile.name?.split(' ') || ['?'];
         const initials = names.map((n: string) => n[0]?.toUpperCase()).join('').slice(0, 2);
 
         const levelThresholds = [0, 2000, 5000, 10000, 20000, 50000];
@@ -57,7 +86,7 @@ export function useProfileData(period: Period = 'All-time') {
         });
 
         setBadges(
-          (Array.isArray(allBadges) ? allBadges : []).map((b: any) => ({
+          (Array.isArray(allBadges) ? allBadges : []).map((b: ApiBadge) => ({
             id: b.id,
             iconName: 'Trophy',
             label: b.name,
@@ -70,11 +99,11 @@ export function useProfileData(period: Period = 'All-time') {
           }))
         );
 
-        const records = sensorData?.data || [];
-        const totalDist = records.reduce((s: number, r: any) => s + r.distance_km, 0);
-        const totalElev = records.reduce((s: number, r: any) => s + (r.elevation_m || 0), 0);
-        const maxSpd = Math.max(0, ...records.map((r: any) => r.max_speed || 0));
-        const totalTime = records.reduce((s: number, r: any) => s + (r.duration_seconds || 0), 0);
+        const records: SensorRecord[] = sensorData?.data || [];
+        const totalDist = records.reduce((s, r) => s + r.distance_km, 0);
+        const totalElev = records.reduce((s, r) => s + (r.elevation_m || 0), 0);
+        const maxSpd = Math.max(0, ...records.map(r => r.max_speed || 0));
+        const totalTime = records.reduce((s, r) => s + (r.duration_seconds || 0), 0);
 
         setStats({
           totalDistance: Math.round(totalDist * 10) / 10,
@@ -82,9 +111,15 @@ export function useProfileData(period: Period = 'All-time') {
           maxSpeed: Math.round(maxSpd * 10) / 10,
           timeInSaddle: Math.round(totalTime / 3600),
         });
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
   }, [period]);
 
   return { user, stats, badges, isLoading };
