@@ -1,24 +1,20 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login/Login';
+import Profile from './pages/Profile/Profile';
+import { MainLayout } from './layout/MainLayout';
 
-function App() {
-  const handleStravaLogin = () => {
-    window.location.href = `${BACKEND_URL}/strava/login`;
-  };
-
+export default function App() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-6 bg-gray-100">
-      <h1 className="text-3xl font-bold text-blue-600">Michelin Bike App</h1>
-      <button
-        onClick={handleStravaLogin}
-        className="flex items-center gap-2 rounded-lg bg-[#FC4C02] px-6 py-3 font-semibold text-white shadow hover:bg-[#e04400] active:scale-95 transition-all"
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
-        </svg>
-        Connecter avec Strava
-      </button>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route element={<MainLayout />}>
+          <Route path="/profile" element={<Profile />} />
+          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+          {/* <Route path="/ride" element={<Ride />} /> */}
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
