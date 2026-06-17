@@ -1,24 +1,28 @@
-import { Controller, Get, Param, NotImplementedException } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { CatalogService } from './catalog.service';
 
 @ApiTags('Catalog')
 @Controller('catalog')
 export class CatalogController {
+  constructor(private readonly service: CatalogService) {}
+
   @Get()
-  @ApiOperation({ summary: '🚧 Lister les pneus Michelin disponibles' })
+  @ApiOperation({ summary: 'Lister les pneus Michelin disponibles' })
   findAll() {
-    throw new NotImplementedException();
+    return this.service.findAll();
   }
 
   @Get('recommend')
-  @ApiOperation({ summary: '🚧 Recommandation de pneu selon usage' })
-  recommend() {
-    throw new NotImplementedException();
+  @ApiOperation({ summary: 'Recommandation de pneu selon usage' })
+  @ApiQuery({ name: 'usage', required: false, enum: ['road', 'gravel', 'mtb', 'urban'] })
+  recommend(@Query('usage') usage?: string) {
+    return this.service.recommend(usage);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '🚧 Détail d\'un pneu du catalogue' })
+  @ApiOperation({ summary: 'Détail d\'un pneu du catalogue' })
   findOne(@Param('id') id: string) {
-    throw new NotImplementedException();
+    return this.service.findOne(id);
   }
 }

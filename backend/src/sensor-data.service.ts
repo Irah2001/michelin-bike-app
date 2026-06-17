@@ -4,7 +4,10 @@ import { Repository } from 'typeorm';
 import { SensorRecord } from './entities/sensor-record.entity';
 import { User } from './entities/user.entity';
 import { Tire } from './entities/tire.entity';
+import { ChallengeParticipant } from './entities/challenge-participant.entity';
+import { Challenge } from './entities/challenge.entity';
 import { StravaService } from './strava/strava.service';
+import { BadgesService } from './badges.service';
 import { CreateSensorDataDto } from './dto/sensor-data.dto';
 
 @Injectable()
@@ -13,11 +16,20 @@ export class SensorDataService {
     @InjectRepository(SensorRecord) private recordRepo: Repository<SensorRecord>,
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Tire) private tireRepo: Repository<Tire>,
+    @InjectRepository(ChallengeParticipant) private participantRepo: Repository<ChallengeParticipant>,
+    @InjectRepository(Challenge) private challengeRepo: Repository<Challenge>,
     private stravaService: StravaService,
+    private badgesService: BadgesService,
   ) {}
 
-  async findAll(userId: string) {
-    return this.recordRepo.find({ where: { user_id: userId }, order: { recorded_at: 'DESC' } });
+  async findAll(userId: string, page = 1, limit = 20) {
+    const [data, total] = await this.recordRepo.findAndCount({
+      where: { user_id: userId },
+      order: { recorded_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string, userId: string) {
@@ -50,7 +62,12 @@ export class SensorDataService {
     // Update user stats
     await this.updateUserStats(userId, dto.distance_km, dto.elevation_m || 0);
 
-    return saved;
+    // Update challenges
+    await this.updateChallenges(userId, dto.distance_km);
+
+    // Check badges
+    const newBadges = await this.badgesService.checkAndAward(userId);
+    return { ...saved, new_badges: newBadges };
   }
 
   async syncStrava(userId: string) {
@@ -119,5 +136,21 @@ export class SensorDataService {
     user.level = Math.min(levels.length, Math.floor(user.xp / 1000) + 1);
     user.level_name = levels[user.level - 1] || 'Légende';
     await this.userRepo.save(user);
+  }
+
+  private async updateChallenges(userId: string, distanceKm: number) {
+    const participations = await this.participantRepo.find({
+      where: { user_id: userId },
+      relations: { challenge: true },
+    });
+    for (const p of participations) {
+      if (!p.challenge.is_active) continue;
+      if (new Date() > new Date(p.challenge.end_date)) continue;
+      p.contributed_km += distanceKm;
+      await this.participantRepo.save(p);
+      // Update challenge total
+      p.challenge.current_km += distanceKm;
+      await this.challengeRepo.save(p.challenge);
+    }
   }
 }

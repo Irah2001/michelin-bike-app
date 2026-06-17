@@ -12,8 +12,15 @@ export class ChallengesService {
     @InjectRepository(ChallengeParticipant) private participantRepo: Repository<ChallengeParticipant>,
   ) {}
 
-  async findAll() {
-    return this.challengeRepo.find({ where: { is_active: true }, relations: { participants: true } });
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.challengeRepo.findAndCount({
+      where: { is_active: true },
+      relations: { participants: true },
+      order: { start_date: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
   async create(userId: string, dto: CreateChallengeDto) {

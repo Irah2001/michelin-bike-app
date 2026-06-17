@@ -11,6 +11,8 @@ import { SensorDataModule } from './sensor-data.module';
 import { TiresModule } from './tires.module';
 import { CatalogModule } from './catalog.module';
 import { ChallengesModule } from './challenges.module';
+import { TipsModule } from './tips.module';
+import { SeedService } from './seed.service';
 import {
   User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
   Sensor, Ride, SensorReading, RideReading, WearEstimate,
@@ -35,6 +37,7 @@ import {
         synchronize: true,
       }),
     }),
+    TypeOrmModule.forFeature([Catalog, Badge]),
     StravaModule,
     SimulatorModule,
     AuthModule,
@@ -43,8 +46,9 @@ import {
     TiresModule,
     CatalogModule,
     ChallengesModule,
+    TipsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService],
 })
 export class AppModule {}

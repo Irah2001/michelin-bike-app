@@ -7,6 +7,7 @@ import { SensorReading } from '../entities/sensor-reading.entity';
 import { RideReading } from '../entities/ride-reading.entity';
 import { WearEstimate } from '../entities/wear-estimate.entity';
 import { SensorGateway } from './sensor.gateway';
+import { SensorDataService } from '../sensor-data.service';
 
 const FRONT_SENSOR_ID = '11111111-1111-1111-1111-111111111111';
 const REAR_SENSOR_ID = '22222222-2222-2222-2222-222222222222';
@@ -39,6 +40,7 @@ export class SimulatorService {
     @InjectRepository(RideReading) private rideReadingRepo: Repository<RideReading>,
     @InjectRepository(WearEstimate) private wearEstimateRepo: Repository<WearEstimate>,
     private readonly sensorGateway: SensorGateway,
+    private readonly sensorDataService: SensorDataService,
   ) {}
 
   async start(): Promise<{ rideId: string }> {
@@ -67,8 +69,8 @@ export class SimulatorService {
     return { rideId: this.currentRideId };
   }
 
-  async stop(): Promise<void> {
-    if (!this.isRunning) return;
+  async stop(): Promise<{ synced: boolean }> {
+    if (!this.isRunning) return { synced: false };
 
     if (this.dataInterval) clearInterval(this.dataInterval);
     if (this.wearInterval) clearInterval(this.wearInterval);
@@ -82,10 +84,22 @@ export class SimulatorService {
         total_elevation: this.totalElevationM,
         battery_end: +((this.frontBattery + this.rearBattery) / 2).toFixed(1),
       });
+
+      // Sync to user stats (XP, badges, challenges)
+      if (this.totalDistanceKm > 0) {
+        const avgSpeed = this.totalDistanceKm / (this.elapsedSeconds / 3600);
+        await this.sensorDataService.create(DEV_USER_ID, {
+          distance_km: +this.totalDistanceKm.toFixed(2),
+          elevation_m: +this.totalElevationM.toFixed(0),
+          avg_speed: +avgSpeed.toFixed(1),
+          duration_seconds: this.elapsedSeconds,
+        });
+      }
     }
 
     this.isRunning = false;
     this.currentRideId = null;
+    return { synced: true };
   }
 
   async getSensorReadings(rideId: string): Promise<SensorReading[]> {

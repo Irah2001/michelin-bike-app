@@ -13,7 +13,14 @@ export class TiresService {
   ) {}
 
   async findAll(userId: string) {
-    return this.tireRepo.find({ where: { user_id: userId }, relations: { catalog: true } });
+    const tires = await this.tireRepo.find({ where: { user_id: userId }, relations: { catalog: true } });
+    return tires.map(t => ({
+      ...t,
+      alert: t.wear_score <= 20 ? { level: 'critical', message: `Pneu usé à ${100 - t.wear_score}% — remplacement recommandé !` }
+           : t.wear_score <= 40 ? { level: 'warning', message: `Usure avancée (${100 - t.wear_score}%) — surveillez votre pneu` }
+           : null,
+      recommended_replacement: t.wear_score <= 20 ? t.catalog?.name || 'Voir catalogue' : null,
+    }));
   }
 
   async create(userId: string, dto: CreateTireDto) {

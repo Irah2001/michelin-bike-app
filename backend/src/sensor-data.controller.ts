@@ -1,32 +1,41 @@
-import { Controller, Get, Post, Param, NotImplementedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { SensorDataService } from './sensor-data.service';
+import { CreateSensorDataDto } from './dto/sensor-data.dto';
 
 @ApiTags('Sensor Data')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('sensor-data')
 export class SensorDataController {
+  constructor(private readonly service: SensorDataService) {}
+
   @Get()
-  @ApiOperation({ summary: '🚧 Historique des remontées (capteur + Strava)' })
-  @ApiResponse({ status: 200, description: 'Liste des remontées : distance, dénivelé, vitesse moy/max, watts, cadence, durée, date' })
-  findAll() {
-    throw new NotImplementedException();
+  @ApiOperation({ summary: 'Historique des remontées (capteur + Strava)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findAll(@Req() req: any, @Query('page') page?: string, @Query('limit') limit?: string) {
+    const p = Math.max(1, Number(page) || 1);
+    const l = Math.min(100, Math.max(1, Number(limit) || 20));
+    return this.service.findAll(req.user.sub, p, l);
   }
 
   @Post()
-  @ApiOperation({ summary: '🚧 Enregistrer une remontée capteur (simulateur)' })
-  @ApiResponse({ status: 201, description: 'Crée une entrée avec les données du capteur : distance_km, elevation_m, avg_speed, max_speed, duration_seconds, avg_watts, calories' })
-  create() {
-    throw new NotImplementedException();
+  @ApiOperation({ summary: 'Enregistrer une remontée capteur (simulateur)' })
+  create(@Req() req: any, @Body() body: CreateSensorDataDto) {
+    return this.service.create(req.user.sub, body);
   }
 
   @Post('sync')
-  @ApiOperation({ summary: '🚧 Synchroniser les données depuis Strava' })
-  sync() {
-    throw new NotImplementedException();
+  @ApiOperation({ summary: 'Synchroniser les données depuis Strava' })
+  sync(@Req() req: any) {
+    return this.service.syncStrava(req.user.sub);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '🚧 Détail d\'une remontée' })
-  findOne(@Param('id') id: string) {
-    throw new NotImplementedException();
+  @ApiOperation({ summary: 'Détail d\'une remontée' })
+  findOne(@Req() req: any, @Param('id') id: string) {
+    return this.service.findOne(id, req.user.sub);
   }
 }
