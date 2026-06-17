@@ -5,12 +5,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StravaModule } from './strava/strava.module';
 import { SimulatorModule } from './simulator/simulator.module';
-import { AuthController } from './auth.controller';
-import { UsersController } from './users.controller';
-import { SensorDataController } from './sensor-data.controller';
-import { TiresController } from './tires.controller';
-import { CatalogController } from './catalog.controller';
-import { ChallengesController } from './challenges.controller';
+import { AuthModule } from './auth.module';
+import { UsersModule } from './users.module';
+import { SensorDataModule } from './sensor-data.module';
+import { TiresModule } from './tires.module';
+import { CatalogModule } from './catalog.module';
+import { ChallengesModule } from './challenges.module';
 import {
   User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
   Sensor, Ride, SensorReading, RideReading, WearEstimate,
@@ -37,8 +37,14 @@ import {
     }),
     StravaModule,
     SimulatorModule,
+    AuthModule,
+    UsersModule,
+    SensorDataModule,
+    TiresModule,
+    CatalogModule,
+    ChallengesModule,
   ],
-  controllers: [AppController, AuthController, UsersController, SensorDataController, TiresController, CatalogController, ChallengesController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

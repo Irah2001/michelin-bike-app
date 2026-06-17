@@ -23,7 +23,13 @@ export class User {
   avatar_url: string;
 
   @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
   region: string;
+
+  @Column({ nullable: true })
+  city: string;
 
   // Strava (optionnel)
   @Column({ type: 'bigint', unique: true, nullable: true })

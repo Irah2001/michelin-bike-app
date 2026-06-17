@@ -2,13 +2,15 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { StravaController } from './strava.controller';
-import { StravaService } from './strava.service';
-import { User } from '../entities/user.entity';
+import { TiresController } from './tires.controller';
+import { TiresService } from './tires.service';
+import { Tire } from './entities/tire.entity';
+import { Catalog } from './entities/catalog.entity';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Tire, Catalog]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -17,7 +19,7 @@ import { User } from '../entities/user.entity';
       }),
     }),
   ],
-  controllers: [StravaController],
-  providers: [StravaService],
+  controllers: [TiresController],
+  providers: [TiresService, JwtAuthGuard],
 })
-export class StravaModule {}
+export class TiresModule {}
