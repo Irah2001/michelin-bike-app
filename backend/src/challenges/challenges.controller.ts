@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ChallengesService } from './challenges.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { JoinChallengeDto } from './dto/join-challenge.dto';
+import { ContributeChallengeDto } from './dto/contribute-challenge.dto';
 
 @ApiTags('Challenges')
 @Controller('challenges')
@@ -45,6 +46,18 @@ export class ChallengesController {
   @ApiResponse({ status: 409, description: 'Déjà participant ou challenge inactif' })
   join(@Param('id') id: string, @Body() dto: JoinChallengeDto) {
     return this.challengesService.join(id, dto.user_id);
+  }
+
+  @Patch(':id/contribute')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Ajouter des km à sa participation' })
+  @ApiParam({ name: 'id', description: 'UUID du challenge' })
+  @ApiBody({ type: ContributeChallengeDto })
+  @ApiResponse({ status: 200, description: 'Leaderboard mis à jour après contribution' })
+  @ApiResponse({ status: 404, description: 'Challenge ou participation introuvable' })
+  @ApiResponse({ status: 409, description: 'Kilomètres invalides' })
+  contribute(@Param('id') id: string, @Body() dto: ContributeChallengeDto) {
+    return this.challengesService.contribute(id, dto.user_id, dto.km);
   }
 
   @Get(':id/leaderboard')

@@ -20,7 +20,7 @@ export class ChallengesService {
   findAll() {
     return this.challengeRepo.find({
       where: { is_active: true },
-      relations: ['creator', 'participants'],
+      relations: { creator: true, participants: true },
       order: { start_date: 'DESC' },
     });
   }
@@ -28,7 +28,7 @@ export class ChallengesService {
   async findOne(id: string) {
     const challenge = await this.challengeRepo.findOne({
       where: { id },
-      relations: ['creator', 'participants', 'participants.user'],
+      relations: { creator: true, participants: { user: true } },
     });
     if (!challenge) throw new NotFoundException(`Challenge ${id} introuvable`);
     return challenge;
@@ -61,13 +61,41 @@ export class ChallengesService {
     return this.participantRepo.save(participant);
   }
 
+  async contribute(id: string, userId: string, km: number) {
+    const participant = await this.participantRepo.findOne({
+      where: { challenge_id: id, user_id: userId },
+    });
+    if (!participant)
+      throw new NotFoundException('Vous ne participez pas à ce challenge');
+    if (km <= 0)
+      throw new ConflictException(
+        'Les kilomètres contribués doivent être positifs',
+      );
+
+    await this.participantRepo.increment(
+      { challenge_id: id, user_id: userId },
+      'contributed_km',
+      km,
+    );
+
+    const raw = await this.participantRepo
+      .createQueryBuilder('cp')
+      .select('SUM(cp.contributed_km)', 'sum')
+      .where('cp.challenge_id = :id', { id })
+      .getRawOne<{ sum: number }>();
+
+    await this.challengeRepo.update(id, { current_km: raw?.sum ?? 0 });
+
+    return this.leaderboard(id);
+  }
+
   async leaderboard(id: string) {
     const challenge = await this.challengeRepo.findOne({ where: { id } });
     if (!challenge) throw new NotFoundException(`Challenge ${id} introuvable`);
 
     const participants = await this.participantRepo.find({
       where: { challenge_id: id },
-      relations: ['user'],
+      relations: { user: true },
       order: { contributed_km: 'DESC' },
     });
 
