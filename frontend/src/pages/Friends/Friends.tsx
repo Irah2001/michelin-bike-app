@@ -17,7 +17,7 @@ export default function Friends() {
     ]).then(([fl, profile, ch]) => {
       setFriendList(fl);
       setMe(profile);
-      const active = ch?.data?.[0] || ch?.[0];
+      const active = (ch?.data as any)?.[0] || (ch as unknown as any[])?.[0];
       if (active) {
         setChallenge(active);
         challenges.leaderboard(active.id).then(setChallengeLb).catch(() => {});
