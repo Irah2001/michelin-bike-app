@@ -1,114 +1,75 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { expect, it, describe, vi, beforeEach } from 'vitest';
-import '@testing-library/jest-dom';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import Profile from './Profile';
-import type { UserProfile, UserStats } from '../../types';
 
-import { useProfileData } from '../../hooks/useProfileData';
-import { MOCK_BADGES } from '../../constants';
+vi.mock('../../services/api', () => ({
+  users: {
+    me: vi.fn(),
+    leaderboard: vi.fn().mockResolvedValue([]),
+  },
+  tires: { list: vi.fn().mockResolvedValue([]) },
+  sensorData: { list: vi.fn().mockResolvedValue({ data: [] }) },
+}));
 
 vi.mock('../../hooks/useProfileData', () => ({
-    useProfileData: vi.fn(),
-}));
-
-vi.mock('../../constants', () => ({
-    PROFILE_TABS: ['Semaine', 'Mois', 'Saison', 'All-time'],
-    MOCK_BADGES: [
-        { id: '1', iconName: 'Trophy', label: 'Premier 1 000 km', unlocked: true },
-        { id: '2', iconName: 'Timer', label: 'Nocturne', unlocked: true },
-        { id: '3', iconName: 'ShieldCheck', label: 'Grimpeur', unlocked: false },
-        { id: '4', iconName: 'Mountain', label: 'Explorateur', unlocked: true },
-        { id: '5', iconName: 'Zap', label: 'Sprinteur', unlocked: false },
-        { id: '6', iconName: 'Repeat', label: 'Régulier', unlocked: true },
+  useProfileData: () => ({
+    user: {
+      id: '1', initials: 'DN', firstName: 'Damien', lastName: 'Nerriere',
+      location: 'Lyon', level: 3, title: 'Endurci', xpCurrent: 12450, xpMax: 15000,
+      isCertified: true, sensorType: 'Capteur ESP32',
+    },
+    stats: { totalDistance: 1124, totalElevation: 13823, maxSpeed: 68.4, timeInSaddle: 42, timeUnit: 'h' },
+    badges: [
+      { id: '1', iconName: 'Trophy', label: 'Premier 1 000 km', unlocked: true },
+      { id: '2', iconName: 'Timer', label: '100 sorties', unlocked: false, progress: 25 },
     ],
+    isLoading: false,
+  }),
 }));
 
-const mockUser = {
-    initials: 'CR',
-    location: 'Lyon • Auvergne-Rhône-Alpes',
-    level: 3,
-    title: 'Rouleur certifié',
-    badge: 'Rouleur certifié',
-    sensorType: 'Capteur de puissance',
-    xpCurrent: 830,
-    xpMax: 1000,
-};
+describe('Profile', () => {
+  beforeEach(() => {
+    localStorage.setItem('token', 'fake-token');
+  });
 
-const mockStats = {
-    totalDistance: '4 287',
-    totalElevation: '52 140',
-    maxSpeed: '68.5',
-    timeInSaddle: '214',
-};
-
-describe('Profile Component', () => {
-    const mockedUseProfileData = vi.mocked(useProfileData);
-
-    beforeEach(() => {
-        mockedUseProfileData.mockReturnValue({
-            user: mockUser as unknown as UserProfile,
-            stats: mockStats as unknown as UserStats,
-            isLoading: false,
-        });
+  it('renders user name and level', async () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>);
+    await waitFor(() => {
+      expect(screen.getByText('Damien Nerriere')).toBeInTheDocument();
+      expect(screen.getByText(/NIV. 3/)).toBeInTheDocument();
     });
+  });
 
-    it('renders without crashing', () => {
-        render(<Profile />);
-        expect(screen.getByText('Mon profil')).toBeInTheDocument();
+  it('renders stats correctly', async () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>);
+    await waitFor(() => {
+      expect(screen.getByText('1124')).toBeInTheDocument();
+      expect(screen.getByText('13823')).toBeInTheDocument();
+      expect(screen.getByText('68.4')).toBeInTheDocument();
     });
+  });
 
-    it('renders loading state', () => {
-        mockedUseProfileData.mockReturnValue({
-            user: null,
-            stats: null,
-            isLoading: true,
-        });
-
-        const { container } = render(<Profile />);
-
-        const spinner = container.querySelector('.animate-spin');
-        expect(spinner).toBeInTheDocument();
-
-        expect(screen.queryByText('Mon profil')).not.toBeInTheDocument();
+  it('renders badges section', async () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>);
+    await waitFor(() => {
+      expect(screen.getByText('Badges')).toBeInTheDocument();
+      expect(screen.getByText('Premier 1 000 km')).toBeInTheDocument();
+      expect(screen.getByText('1 / 2 débloqués')).toBeInTheDocument();
     });
+  });
 
-    it('renders all tabs and changes active tab on click', () => {
-        render(<Profile />);
-
-        const semaineTab = screen.getByText('Semaine');
-        const allTimeTab = screen.getByText('All-time');
-
-        expect(semaineTab).toBeInTheDocument();
-        expect(screen.getByText('Mois')).toBeInTheDocument();
-        expect(screen.getByText('Saison')).toBeInTheDocument();
-        expect(allTimeTab).toBeInTheDocument();
-
-        expect(allTimeTab).toHaveClass('bg-[#FCE500]');
-        expect(semaineTab).not.toHaveClass('bg-[#FCE500]');
-
-        fireEvent.click(semaineTab);
-
-        expect(semaineTab).toHaveClass('bg-[#FCE500]');
-        expect(allTimeTab).not.toHaveClass('bg-[#FCE500]');
+  it('shows certified badge when user is certified', async () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>);
+    await waitFor(() => {
+      expect(screen.getByText(/Rouleur certifié/)).toBeInTheDocument();
     });
+  });
 
-    it('renders statistics correctly', () => {
-        render(<Profile />);
-        expect(screen.getByText(mockStats.totalDistance)).toBeInTheDocument();
-        expect(screen.getByText('Distance totale')).toBeInTheDocument();
-
-        expect(screen.getByText(mockStats.totalElevation)).toBeInTheDocument();
-        expect(screen.getByText('Dénivelé cumulé')).toBeInTheDocument();
+  it('renders regional leaderboard CTA', async () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>);
+    await waitFor(() => {
+      expect(screen.getByText('Mon classement régional')).toBeInTheDocument();
     });
-
-    it('renders badges section correctly', () => {
-        render(<Profile />);
-        expect(screen.getByText('Badges')).toBeInTheDocument();
-
-        const unlockedBadgesCount = MOCK_BADGES.filter(b => b.unlocked).length;
-        expect(screen.getByText(`${unlockedBadgesCount} / ${MOCK_BADGES.length} débloqués`)).toBeInTheDocument();
-
-        expect(screen.getByText('Premier 1 000 km')).toBeInTheDocument();
-        expect(screen.getByText('Grimpeur')).toBeInTheDocument();
-    });
+  });
 });

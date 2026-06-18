@@ -12,6 +12,10 @@ describe('AmbassadorCard Component', () => {
         name: 'Paul Seixas',
         isVerifiedUser: true,
         description: 'Coureur professionnel',
+        is_ambassador: true,
+        level_name: 'Coureur professionnel',
+        best_distance_km: 28400,
+        best_elevation_m: 412000,
         stats: {
             seasonKm: '28 400',
             seasonElevation: '412 k',
