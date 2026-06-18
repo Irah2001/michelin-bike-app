@@ -1,8 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { Loader2, Plus, ChevronLeft, AlertTriangle, ShoppingCart, ChevronRight } from 'lucide-react';
-import { tires, catalog, rideReadings } from '../../services/api';
+import { Loader2, Plus, ChevronLeft, AlertTriangle, ShoppingCart, ChevronRight, Thermometer, Gauge, Battery, CircleDot } from 'lucide-react';
+import { tires, catalog } from '../../services/api';
+import { io, Socket } from 'socket.io-client';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export default function Tires() {
   const [myTires, setMyTires] = useState<any[]>([]);
@@ -12,32 +15,51 @@ export default function Tires() {
   const [selectedTire, setSelectedTire] = useState<any>(null);
   const [tireDetail, setTireDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [gpsPoints, setGpsPoints] = useState<{ lat: number; lng: number }[]>([]);
+  const [liveData, setLiveData] = useState<{ front: any; rear: any }>({ front: null, rear: null });
+  const [liveTemps, setLiveTemps] = useState<number[]>([]);
+  const socketRef = useRef<Socket | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
     Promise.all([tires.list(), catalog.list()])
       .then(([t, c]) => { setMyTires(t); setCatalogList(c); })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    const interval = setInterval(() => {
+      tires.list().then(setMyTires).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Leaflet map init
+  // WebSocket connection for live sensor data
   useEffect(() => {
-    if (!mapRef.current || gpsPoints.length < 2) return;
-    if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
-    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const latlngs = gpsPoints.map(p => [p.lat, p.lng] as [number, number]);
-    const polyline = L.polyline(latlngs, { color: '#FCE500', weight: 4 }).addTo(map);
-    map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
-    // Start/end markers
-    L.circleMarker(latlngs[0], { radius: 6, color: '#84BD00', fillColor: '#84BD00', fillOpacity: 1 }).addTo(map);
-    L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color: '#FF5B5B', fillColor: '#FF5B5B', fillOpacity: 1 }).addTo(map);
-    mapInstanceRef.current = map;
-    return () => { map.remove(); mapInstanceRef.current = null; };
-  }, [gpsPoints]);
+    if (!selectedTire) {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      return;
+    }
+    const socket = io(BACKEND_URL, { transports: ['websocket'] });
+    socketRef.current = socket;
+    socket.on('sensor_reading', (data: { front: any; rear: any }) => {
+      setLiveData(data);
+      const isFront = selectedTire.position === 'front';
+      const reading = isFront ? data.front : data.rear;
+      if (reading?.temperature) {
+        setLiveTemps(prev => [...prev.slice(-59), reading.temperature]);
+      }
+    });
+
+    // Poll tire km/wear every 30s while in detail view
+    const poll = setInterval(() => {
+      tires.list().then(list => {
+        const updated = list.find((t: any) => t.id === selectedTire.id);
+        if (updated) setSelectedTire(updated);
+      }).catch(() => {});
+    }, 30000);
+
+    return () => { socket.disconnect(); socketRef.current = null; clearInterval(poll); };
+  }, [selectedTire?.id]);
 
   const handleAdd = (catalogId: string, position: string) => {
     tires.create({ catalog_id: catalogId, position }).then(t => {
@@ -49,25 +71,31 @@ export default function Tires() {
   const openTireDetail = (tire: any) => {
     setSelectedTire(tire);
     setDetailLoading(true);
-    setGpsPoints([]);
+    setLiveTemps([]);
     tires.readings(tire.id).then(data => {
       setTireDetail(data);
-      if (data?.last_ride_id) {
-        rideReadings.get(data.last_ride_id).then(pts => {
-          setGpsPoints(pts.map((p: any) => ({ lat: p.lat, lng: p.lng })));
-        }).catch(console.error);
-      }
     }).catch(console.error).finally(() => setDetailLoading(false));
   };
+
+  // Leaflet map for last position
+  useEffect(() => {
+    if (!selectedTire || !mapRef.current) return;
+    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([45.7796, 3.0869], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.circleMarker([45.7796, 3.0869], { radius: 8, color: '#FCE500', fillColor: '#FCE500', fillOpacity: 1, weight: 2 }).addTo(map);
+    return () => { map.remove(); };
+  }, [selectedTire?.id]);
 
   if (loading) return <div className="flex h-full items-center justify-center bg-[#080F22]"><Loader2 className="animate-spin text-[#FCE500]" size={40} /></div>;
 
   // Detail view
   if (selectedTire) {
+    const isFront = selectedTire.position === 'front';
+    const live = isFront ? liveData.front : liveData.rear;
     const lastReading = tireDetail?.sensor_readings?.[0];
-    const temp = lastReading?.temperature ?? 34;
-    const pressure = lastReading?.pressure ?? 6.2;
-    const battery = lastReading?.battery_pct ?? 78;
+    const temp = live?.temperature ?? lastReading?.temperature ?? 34;
+    const pressure = live?.pressure ?? lastReading?.pressure ?? 6.2;
+    const battery = live?.battery_pct ?? lastReading?.battery_pct ?? 78;
     const wearPct = 100 - (selectedTire.wear_score ?? 77);
     const kmRemaining = Math.max(0, Math.round((selectedTire.wear_score / 100) * 5000));
     const isOverheat = temp > 65;
@@ -110,9 +138,9 @@ export default function Tires() {
 
           {/* 3 stat cards */}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Température" value={temp.toFixed(1)} unit="°C" status="Normale" statusColor="green" />
-            <StatCard label="Pression" value={pressure.toFixed(1)} unit="bar" status="Optimale" statusColor="green" />
-            <StatCard label="Batterie" value={battery.toFixed(0)} unit="%" status={`≈ ${Math.round(battery / 20)} mois`} statusColor="blue" />
+            <StatCard icon={<Thermometer size={16} />} label="Température" value={temp.toFixed(1)} unit="°C" status="Normale" statusColor="green" />
+            <StatCard icon={<Gauge size={16} />} label="Pression" value={pressure.toFixed(1)} unit="bar" status="Optimale" statusColor="green" />
+            <StatCard icon={<Battery size={16} />} label="Batterie" value={battery.toFixed(0)} unit="%" status={`≈ ${Math.round(battery / 20)} mois`} statusColor="blue" />
           </div>
 
           {/* Wear card */}
@@ -147,35 +175,35 @@ export default function Tires() {
             </div>
           )}
 
-          {/* Temperature chart placeholder */}
+          {/* Temperature chart - LIVE */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="font-['Archivo'] font-bold text-[14px]">Température · dernière sortie</p>
-              <p className="text-white/50 text-[11px]">{tireDetail?.rides?.[0]?.duration_seconds ? Math.round(tireDetail.rides[0].duration_seconds / 60) + ' min' : '—'}</p>
+              <p className="font-['Archivo'] font-bold text-[14px]">Température · en direct</p>
+              <p className="text-white/50 text-[11px]">{liveTemps.length > 0 ? `${liveTemps.length} points` : 'En attente...'}</p>
             </div>
             <div className="bg-white/8 border border-white/16 backdrop-blur-[10px] rounded-[18px] p-4 shadow-[0_10px_32px_rgba(0,0,0,0.26)]">
-              <div className="flex items-end gap-[3px] h-[60px]">
-                {Array.from({ length: 26 }, (_, i) => {
-                  const h = 20 + Math.sin(i * 0.4) * 15 + (i > 12 && i < 18 ? 20 : 0);
-                  const isHot = h > 50;
-                  return <div key={i} className={`flex-1 rounded-t-[3px] ${isHot ? 'bg-[#FF6B5B]' : i > 10 && i < 15 ? 'bg-[#FCE500]' : 'bg-[#3A61A6]'}`} style={{ height: `${h}%` }} />;
+              <div className="flex items-end gap-[2px] h-[60px]">
+                {(liveTemps.length > 0 ? liveTemps : Array(26).fill(20)).slice(-40).map((t, i) => {
+                  const h = Math.min(100, Math.max(5, ((t - 15) / 60) * 100));
+                  const isHot = t > 60;
+                  const isWarm = t > 45;
+                  return <div key={i} className={`flex-1 rounded-t-[3px] transition-all ${isHot ? 'bg-[#FF6B5B]' : isWarm ? 'bg-[#FCE500]' : 'bg-[#3A61A6]'}`} style={{ height: `${h}%` }} />;
                 })}
               </div>
               <div className="flex justify-between mt-2">
-                <span className="text-white/45 text-[10px]">départ</span>
-                <span className="text-[#FF8B7E] text-[10px]">Col de la Madone</span>
-                <span className="text-white/45 text-[10px]">arrivée</span>
+                <span className="text-white/45 text-[10px]">ancien</span>
+                <span className="text-white/60 text-[10px]">{temp > 60 ? '⚠️ surchauffe' : temp > 45 ? 'montée en temp.' : 'normal'}</span>
+                <span className="text-white/45 text-[10px]">maintenant</span>
               </div>
             </div>
           </div>
 
-          {/* GPS Map - dernière sortie */}
-          {gpsPoints.length > 1 && (
-            <div>
-              <p className="font-['Archivo'] font-bold text-[14px] mb-2">Tracé GPS · dernière sortie</p>
-              <div ref={mapRef} className="h-[200px] rounded-[18px] overflow-hidden border border-white/16" />
-            </div>
-          )}
+          {/* Last position */}
+          <div>
+            <p className="font-['Archivo'] font-bold text-[14px] mb-2">Dernière position</p>
+            <div ref={mapRef} className="rounded-[18px] overflow-hidden border border-white/16 h-[180px]" />
+            <p className="text-white/40 text-[10px] mt-1">Clermont-Ferrand · dernière synchronisation capteur</p>
+          </div>
 
           {/* Buy button */}
           <button className="w-full bg-[#FCE500] rounded-[14px] py-3.5 font-bold text-[15px] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)] flex items-center justify-center gap-2">
@@ -234,7 +262,7 @@ export default function Tires() {
                 {/* Tire header */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-[54px] h-[54px] rounded-[27px] bg-white/6 border border-white/12 flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-white/10" />
+                    <CircleDot size={24} className="text-[#FCE500]" />
                   </div>
                   <div className="flex-1">
                     <p className="font-['Archivo'] font-bold text-[16px]">{t.catalog?.name || 'Pneu'}</p>
@@ -263,10 +291,6 @@ export default function Tires() {
           </div>
         )}
 
-        {/* Add button */}
-        <button onClick={() => setShowAdd(true)} className="w-full bg-[#FCE500] rounded-[14px] py-3.5 font-bold text-[15px] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)] flex items-center justify-center gap-2">
-          <Plus size={18} /> Ajouter un produit
-        </button>
       </div>
 
       {/* Add Modal */}
@@ -294,10 +318,12 @@ export default function Tires() {
   );
 }
 
-function StatCard({ label, value, unit, status, statusColor }: { label: string; value: string; unit: string; status: string; statusColor: 'green' | 'blue' }) {
+function StatCard({ icon, label, value, unit, status, statusColor }: { icon: React.ReactNode; label: string; value: string; unit: string; status: string; statusColor: 'green' | 'blue' }) {
   return (
     <div className="bg-white/10 border border-white/18 backdrop-blur-[10px] rounded-[18px] p-3.5 shadow-[0_8px_26px_rgba(0,0,0,0.22)]">
-      <div className="w-[30px] h-[30px] rounded-[9px] bg-[rgba(157,180,224,0.22)] border border-white/16 mb-3" />
+      <div className="w-[30px] h-[30px] rounded-[9px] bg-[rgba(157,180,224,0.22)] border border-white/16 mb-3 flex items-center justify-center text-white/70">
+        {icon}
+      </div>
       <div className="flex items-baseline gap-0.5">
         <span className="font-['Archivo'] font-extrabold text-[22px] tracking-tight">{value}</span>
         <span className="text-white/60 font-semibold text-[11.5px]">{unit}</span>

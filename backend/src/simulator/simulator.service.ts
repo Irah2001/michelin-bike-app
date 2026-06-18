@@ -32,6 +32,8 @@ export class SimulatorService {
 
   private dataInterval: ReturnType<typeof setInterval> | null = null;
   private wearInterval: ReturnType<typeof setInterval> | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private lastSyncedKm = 0;
 
   constructor(
     @InjectRepository(Sensor) private sensorRepo: Repository<Sensor>,
@@ -43,13 +45,16 @@ export class SimulatorService {
     private readonly sensorDataService: SensorDataService,
   ) {}
 
-  async start(): Promise<{ rideId: string }> {
+  private activeUserId: string = DEV_USER_ID;
+
+  async start(userId?: string): Promise<{ rideId: string }> {
     if (this.isRunning) throw new ConflictException('Simulator is already running');
 
+    this.activeUserId = userId || DEV_USER_ID;
     await this.ensureSensors();
 
     const ride = await this.rideRepo.save(
-      this.rideRepo.create({ user_id: DEV_USER_ID }),
+      this.rideRepo.create({ user_id: this.activeUserId }),
     );
     this.currentRideId = ride.id;
 
@@ -61,10 +66,12 @@ export class SimulatorService {
     this.frontBattery = 100;
     this.rearBattery = 100;
     this.recentTemperatures = [];
+    this.lastSyncedKm = 0;
     this.isRunning = true;
 
     this.dataInterval = setInterval(() => void this.generateData(), 2000);
     this.wearInterval = setInterval(() => void this.calculateWear(), 30000);
+    this.syncInterval = setInterval(() => void this.periodicSync(), 60000);
 
     return { rideId: this.currentRideId };
   }
@@ -74,8 +81,10 @@ export class SimulatorService {
 
     if (this.dataInterval) clearInterval(this.dataInterval);
     if (this.wearInterval) clearInterval(this.wearInterval);
+    if (this.syncInterval) clearInterval(this.syncInterval);
     this.dataInterval = null;
     this.wearInterval = null;
+    this.syncInterval = null;
 
     if (this.currentRideId) {
       await this.rideRepo.update(this.currentRideId, {
@@ -86,14 +95,27 @@ export class SimulatorService {
       });
 
       // Sync to user stats (XP, badges, challenges)
-      if (this.totalDistanceKm > 0) {
+      if (this.totalDistanceKm > this.lastSyncedKm) {
+        const deltaKm = this.totalDistanceKm - this.lastSyncedKm;
         const avgSpeed = this.totalDistanceKm / (this.elapsedSeconds / 3600);
-        await this.sensorDataService.create(DEV_USER_ID, {
-          distance_km: +this.totalDistanceKm.toFixed(2),
+        // Update ALL active tires for this user
+        const activeTires = await this.sensorDataService['tireRepo'].find({ where: { user_id: this.activeUserId, is_active: true } });
+        const tireId = activeTires[0]?.id;
+        await this.sensorDataService.create(this.activeUserId, {
+          distance_km: +deltaKm.toFixed(2),
           elevation_m: +this.totalElevationM.toFixed(0),
           avg_speed: +avgSpeed.toFixed(1),
           duration_seconds: this.elapsedSeconds,
+          tire_id: tireId,
         });
+        // Update km on the second tire too
+        if (activeTires[1]) {
+          const tire2 = activeTires[1];
+          tire2.total_km += deltaKm;
+          const lifespan = tire2.catalog?.expected_lifespan_km || 5000;
+          tire2.wear_score = Math.max(0, Math.round(100 - (tire2.total_km / lifespan) * 100));
+          await this.sensorDataService['tireRepo'].save(tire2);
+        }
       }
     }
 
@@ -132,7 +154,7 @@ export class SimulatorService {
       const exists = await this.sensorRepo.findOne({ where: { id: s.id } });
       if (!exists) {
         await this.sensorRepo.save(
-          this.sensorRepo.create({ ...s, user_id: DEV_USER_ID }),
+          this.sensorRepo.create({ ...s, user_id: this.activeUserId }),
         );
       }
     }
@@ -207,6 +229,39 @@ export class SimulatorService {
     } catch {
       // Timestamp collision (extremely rare at 2s interval) — skip this tick
     }
+  }
+
+  private async periodicSync(): Promise<void> {
+    if (!this.isRunning || this.totalDistanceKm <= this.lastSyncedKm) return;
+    const deltaKm = this.totalDistanceKm - this.lastSyncedKm;
+    if (deltaKm < 0.1) return;
+
+    try {
+      const avgSpeed = this.totalDistanceKm / (this.elapsedSeconds / 3600);
+      const activeTires = await this.sensorDataService['tireRepo'].find({
+        where: { user_id: this.activeUserId, is_active: true },
+        relations: { catalog: true },
+      });
+
+      // Update both tires' km and wear
+      for (const tire of activeTires) {
+        tire.total_km += deltaKm;
+        const lifespan = tire.catalog?.expected_lifespan_km || 5000;
+        tire.wear_score = Math.max(0, Math.round(100 - (tire.total_km / lifespan) * 100));
+        await this.sensorDataService['tireRepo'].save(tire);
+      }
+
+      // Update user XP, challenges, etc.
+      await this.sensorDataService.create(this.activeUserId, {
+        distance_km: +deltaKm.toFixed(2),
+        elevation_m: 0,
+        avg_speed: +avgSpeed.toFixed(1),
+        duration_seconds: 60,
+        tire_id: activeTires[0]?.id,
+      });
+
+      this.lastSyncedKm = this.totalDistanceKm;
+    } catch {}
   }
 
   private async calculateWear(): Promise<void> {

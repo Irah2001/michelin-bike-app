@@ -5,11 +5,12 @@ import { ConfigService } from '@nestjs/config';
 import { TipsController } from './tips.controller';
 import { Tire } from './entities/tire.entity';
 import { SensorRecord } from './entities/sensor-record.entity';
+import { User } from './entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tire, SensorRecord]),
+    TypeOrmModule.forFeature([Tire, SensorRecord, User]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

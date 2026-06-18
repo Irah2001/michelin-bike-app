@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Users, ShieldCheck, Plus } from 'lucide-react';
-import { challenges, users } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Users, ShieldCheck, Plus, Lock } from 'lucide-react';
+import { challenges, users, tires as tiresApi } from '../../services/api';
 
 export default function Challenges() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [challenge, setChallenge] = useState<any>(null);
   const [creator, setCreator] = useState<any>(null);
   const [challengeLb, setChallengeLb] = useState<any[]>([]);
   const [me, setMe] = useState<any>(null);
+  const [hasTires, setHasTires] = useState(false);
 
   useEffect(() => {
-    Promise.all([challenges.list(), users.me()])
-      .then(([ch, profile]) => {
+    Promise.all([challenges.list(), users.me(), tiresApi.list()])
+      .then(([ch, profile, myTires]) => {
         setMe(profile);
+        setHasTires(myTires.some((t: any) => t.is_active));
         const data = ch?.data || ch || [];
         const active = data[0];
         if (active) {
@@ -106,8 +110,9 @@ export default function Challenges() {
               </div>
             </div>
 
-            <button onClick={handleJoin} className="mt-5 w-full bg-[#FCE500] rounded-[14px] py-3.5 font-bold text-[15px] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)]">
-              {challenge.is_participant ? 'Contribuer au défi' : 'Rejoindre le défi'}
+            <button onClick={handleJoin} disabled={!hasTires || challenge.is_participant} className={`mt-5 w-full rounded-[14px] py-3.5 font-bold text-[15px] flex items-center justify-center gap-2 ${!hasTires ? 'bg-white/10 text-white/40 shadow-none cursor-not-allowed' : challenge.is_participant ? 'bg-[rgba(132,189,0,0.22)] border border-[rgba(160,210,90,0.45)] text-[#D6EBA6]' : 'bg-[#FCE500] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)]'}`}>
+              {!hasTires && <Lock size={14} />}
+              {!hasTires ? 'Pneu connecté requis' : challenge.is_participant ? '✓ Inscrit · km comptés automatiquement' : 'Rejoindre le défi'}
             </button>
           </div>
         )}
@@ -133,11 +138,11 @@ export default function Challenges() {
             <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="bg-white/8 border border-white/14 rounded-[12px] p-2.5 text-center">
                 <p className="font-archivo font-extrabold text-[15px]">{Math.round(creator.best_distance_km || 0).toLocaleString()}</p>
-                <p className="text-white/60 text-[10px]">km record</p>
+                <p className="text-white/60 text-[10px]">km saison</p>
               </div>
               <div className="bg-white/8 border border-white/14 rounded-[12px] p-2.5 text-center">
-                <p className="font-archivo font-extrabold text-[15px]">{Math.round(creator.best_elevation_m || 0).toLocaleString()}</p>
-                <p className="text-white/60 text-[10px]">m D+ record</p>
+                <p className="font-archivo font-extrabold text-[15px]">{Math.round((creator.best_elevation_m || 0) / 1000)} k</p>
+                <p className="text-white/60 text-[10px]">m D+ saison</p>
               </div>
               <div className="bg-white/8 border border-white/14 rounded-[12px] p-2.5 text-center">
                 <p className="font-archivo font-extrabold text-[15px]">{memberCount.toLocaleString()}</p>
@@ -145,8 +150,9 @@ export default function Challenges() {
               </div>
             </div>
 
-            <button className="mt-4 w-full bg-[#FCE500] rounded-[14px] py-3.5 font-bold text-[15px] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)]">
-              Rejoindre le groupe
+            <button onClick={handleJoin} disabled={!hasTires || challenge?.is_participant} className={`mt-4 w-full rounded-[14px] py-3.5 font-bold text-[15px] flex items-center justify-center gap-2 ${!hasTires ? 'bg-white/10 text-white/40 cursor-not-allowed' : challenge?.is_participant ? 'bg-[rgba(132,189,0,0.22)] border border-[rgba(160,210,90,0.45)] text-[#D6EBA6]' : 'bg-[#FCE500] text-[#11264F] shadow-[0_8px_24px_rgba(252,229,0,0.32)]'}`}>
+              {!hasTires && <Lock size={14} />}
+              {!hasTires ? 'Pneu connecté requis' : challenge?.is_participant ? '✓ Membre' : 'Rejoindre le groupe'}
             </button>
           </div>
         )}
@@ -165,7 +171,7 @@ export default function Challenges() {
                   const memberInitials = member.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??';
                   const rankColor = i === 0 ? '#FCE500' : i === 1 ? '#D7DEEC' : i === 2 ? '#E0A977' : 'rgba(255,255,255,0.6)';
                   return (
-                    <div key={member.user_id} className="flex items-center gap-3">
+                    <div key={member.user_id} className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-1 -m-1 transition-colors" onClick={() => navigate(`/profile/${member.user_id}`)}>
                       <span className="font-archivo font-extrabold text-[15px] w-5 text-center" style={{ color: rankColor }}>{member.rank}</span>
                       <div className="w-[38px] h-[38px] rounded-full bg-white/15 border border-white/20 flex items-center justify-center">
                         <span className="font-archivo font-bold text-[13px]">{memberInitials}</span>

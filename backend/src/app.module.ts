@@ -12,10 +12,11 @@ import { TiresModule } from './tires.module';
 import { CatalogModule } from './catalog.module';
 import { ChallengesModule } from './challenges.module';
 import { TipsModule } from './tips.module';
+import { FriendsModule } from './friends.module';
 import { SeedService } from './seed.service';
 import {
   User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
-  Sensor, Ride, SensorReading, RideReading, WearEstimate,
+  Sensor, Ride, SensorReading, RideReading, WearEstimate, Friendship,
 } from './entities';
 
 @Module({
@@ -32,12 +33,14 @@ import {
         database: config.get('DB_NAME', 'michelin_bike_db'),
         entities: [
           User, Catalog, Tire, SensorRecord, Badge, UserBadge, Challenge, ChallengeParticipant, Level,
-          Sensor, Ride, SensorReading, RideReading, WearEstimate,
+          Sensor, Ride, SensorReading, RideReading, WearEstimate, Friendship,
         ],
-        synchronize: true,
+        synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),
-    TypeOrmModule.forFeature([Catalog, Badge]),
+    TypeOrmModule.forFeature([Catalog, Badge, User, Challenge, ChallengeParticipant]),
     StravaModule,
     SimulatorModule,
     AuthModule,
@@ -47,6 +50,7 @@ import {
     CatalogModule,
     ChallengesModule,
     TipsModule,
+    FriendsModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

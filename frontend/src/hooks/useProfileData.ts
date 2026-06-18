@@ -8,6 +8,7 @@ type Period = 'Semaine' | 'Mois' | 'Saison' | 'All-time';
 interface SensorRecord {
   distance_km: number;
   elevation_m: number | null;
+  avg_speed: number | null;
   max_speed: number | null;
   duration_seconds: number | null;
 }
@@ -102,14 +103,15 @@ export function useProfileData(period: Period = 'All-time') {
         const records: SensorRecord[] = sensorData?.data || [];
         const totalDist = records.reduce((s, r) => s + r.distance_km, 0);
         const totalElev = records.reduce((s, r) => s + (r.elevation_m || 0), 0);
-        const maxSpd = Math.max(0, ...records.map(r => r.max_speed || 0));
+        const maxSpd = Math.max(0, ...records.map(r => r.max_speed || r.avg_speed || 0));
         const totalTime = records.reduce((s, r) => s + (r.duration_seconds || 0), 0);
 
         setStats({
           totalDistance: Math.round(totalDist * 10) / 10,
           totalElevation: Math.round(totalElev),
           maxSpeed: Math.round(maxSpd * 10) / 10,
-          timeInSaddle: Math.round(totalTime / 3600),
+          timeInSaddle: totalTime >= 3600 ? Math.round((totalTime / 3600) * 10) / 10 : Math.round(totalTime / 60),
+          timeUnit: totalTime >= 3600 ? 'h' : 'min',
         });
       } catch (err) {
         console.error(err);

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SimulatorService } from './simulator.service';
 
@@ -9,8 +9,8 @@ export class SimulatorController {
 
   @Post('simulator/start')
   @ApiOperation({ summary: 'Start the ESP32 sensor simulation' })
-  start() {
-    return this.simulatorService.start();
+  start(@Body() body?: { user_id?: string }) {
+    return this.simulatorService.start(body?.user_id);
   }
 
   @Post('simulator/stop')

@@ -26,6 +26,9 @@ export class Tire {
   @Column({ default: true })
   is_active: boolean;
 
+  @Column({ nullable: true })
+  position: string;
+
   @ManyToOne(() => User, (user) => user.tires, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;

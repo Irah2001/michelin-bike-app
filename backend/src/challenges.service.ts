@@ -12,7 +12,7 @@ export class ChallengesService {
     @InjectRepository(ChallengeParticipant) private participantRepo: Repository<ChallengeParticipant>,
   ) {}
 
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, limit = 20, userId?: string) {
     const [data, total] = await this.challengeRepo.findAndCount({
       where: { is_active: true },
       relations: { participants: true },
@@ -20,7 +20,13 @@ export class ChallengesService {
       skip: (page - 1) * limit,
       take: limit,
     });
-    return { data, total, page, limit, pages: Math.ceil(total / limit) };
+    const enriched = data.map(c => ({
+      ...c,
+      participant_count: c.participants?.length || 0,
+      is_participant: userId ? c.participants?.some(p => p.user_id === userId) : false,
+      participants: undefined,
+    }));
+    return { data: enriched, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
   async create(userId: string, dto: CreateChallengeDto) {

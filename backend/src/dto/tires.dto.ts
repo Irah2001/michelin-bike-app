@@ -1,10 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
+import { IsUUID, IsOptional, IsBoolean, IsNumber, IsString, Min } from 'class-validator';
 
 export class CreateTireDto {
   @ApiProperty({ example: 'uuid-du-catalogue' })
   @IsUUID()
   catalog_id: string;
+
+  @ApiPropertyOptional({ example: 'front' })
+  @IsOptional()
+  @IsString()
+  position?: string;
 }
 
 export class UpdateTireDto {

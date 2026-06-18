@@ -15,8 +15,8 @@ export class ChallengesController {
   @ApiOperation({ summary: 'Lister les challenges actifs' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.service.findAll(Math.max(1, Number(page) || 1), Math.min(100, Number(limit) || 20));
+  findAll(@Req() req: any, @Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.service.findAll(Math.max(1, Number(page) || 1), Math.min(100, Number(limit) || 20), req.user.sub);
   }
 
   @Post()

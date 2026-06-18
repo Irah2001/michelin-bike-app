@@ -5,7 +5,6 @@ import PublicProfile from './pages/PublicProfile/PublicProfile';
 import Onboarding from './pages/Onboarding/Onboarding';
 import StravaCallback from './pages/StravaCallback';
 import Dashboard from './pages/Dashboard/Dashboard';
-import Ride from './pages/Ride/Ride';
 import Challenges from './pages/Challenges/Challenges';
 import Tires from './pages/Tires/Tires';
 import Tips from './pages/Tips/Tips';
@@ -22,7 +21,6 @@ export default function App() {
         <Route path="/strava/callback" element={<StravaCallback />} />
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ride" element={<Ride />} />
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/community" element={<Community />} />
           <Route path="/tires" element={<Tires />} />

@@ -68,6 +68,15 @@ export class User {
   @Column({ type: 'real', default: 0 })
   best_elevation_m: number;
 
+  @Column({ type: 'real', nullable: true })
+  weight_kg: number;
+
+  @Column({ default: false })
+  has_completed_onboarding: boolean;
+
+  @Column({ unique: true, nullable: true })
+  friend_code: string;
+
   @CreateDateColumn()
   created_at: Date;
 

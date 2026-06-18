@@ -12,3 +12,4 @@ export { Ride } from './ride.entity';
 export { SensorReading } from './sensor-reading.entity';
 export { RideReading } from './ride-reading.entity';
 export { WearEstimate } from './wear-estimate.entity';
+export { Friendship } from './friendship.entity';

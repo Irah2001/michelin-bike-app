@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Share2 } from 'lucide-react';
 
 interface BadgeCardProps {
     icon: React.ReactNode;
@@ -13,6 +13,16 @@ interface BadgeCardProps {
 }
 
 export function BadgeCard({ icon, label, description, unlocked, progress = 0, current, target, unit }: BadgeCardProps) {
+    const handleShare = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const text = `🏅 J'ai débloqué "${label}" sur Michelin Bike ! #MichelinBike`;
+        if (navigator.share) {
+            navigator.share({ title: label, text });
+        } else {
+            navigator.clipboard.writeText(text);
+        }
+    };
+
     return (
         <div
             data-testid="badge-card-container"
@@ -21,6 +31,12 @@ export function BadgeCard({ icon, label, description, unlocked, progress = 0, cu
                 : 'bg-white/5 backdrop-blur-md border-white/10 text-slate-500 opacity-60'
                 }`}
         >
+            {/* Share button */}
+            {unlocked && (
+                <button onClick={handleShare} className="absolute top-2 right-2 p-1 bg-white/10 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Share2 size={10} className="text-[#FCE500]" />
+                </button>
+            )}
             {/* Tooltip */}
             {description && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 border border-slate-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">

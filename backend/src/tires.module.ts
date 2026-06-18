@@ -6,11 +6,14 @@ import { TiresController } from './tires.controller';
 import { TiresService } from './tires.service';
 import { Tire } from './entities/tire.entity';
 import { Catalog } from './entities/catalog.entity';
+import { SensorRecord } from './entities/sensor-record.entity';
+import { SensorReading } from './entities/sensor-reading.entity';
+import { Ride } from './entities/ride.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tire, Catalog]),
+    TypeOrmModule.forFeature([Tire, Catalog, SensorRecord, SensorReading, Ride]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
