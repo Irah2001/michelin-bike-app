@@ -26,3 +26,32 @@ export interface Badge {
   label: string;
   unlocked: boolean;
 }
+
+export interface AmbassadorProfile {
+  id: string;
+  roleLabel: string;
+  isStatsVerified: boolean;
+  name: string;
+  isVerifiedUser: boolean;
+  description: string;
+  stats: {
+    seasonKm: string;
+    seasonElevation: string;
+    membersCount: string;
+  };
+}
+
+export interface CollectiveChallenge {
+  id: string;
+  typeLabel: string;
+  isLive: boolean;
+  title: string;
+  currentValue: number;
+  targetValue: number;
+  unitLabel: string;
+  stats: {
+    percentage: number;
+    timeLeft: string;
+    ridersCount: number;
+  };
+}
