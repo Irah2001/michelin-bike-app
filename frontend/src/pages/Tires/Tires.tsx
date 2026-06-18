@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Loader2, Plus, ChevronLeft, AlertTriangle, ShoppingCart, ChevronRight, Thermometer, Gauge, Battery, CircleDot } from 'lucide-react';
+import { Loader2, Plus, ChevronLeft, AlertTriangle, ShoppingCart, ChevronRight, Thermometer, Gauge, Battery, CircleDot, ShieldCheck, Bluetooth } from 'lucide-react';
 import { tires, catalog } from '../../services/api';
 import { io, Socket } from 'socket.io-client';
 import L from 'leaflet';
@@ -26,7 +26,7 @@ export default function Tires() {
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      tires.list().then(setMyTires).catch(() => {});
+      tires.list().then(setMyTires).catch(() => { });
     }, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -54,7 +54,7 @@ export default function Tires() {
       tires.list().then(list => {
         const updated = list.find((t: any) => t.id === selectedTire.id);
         if (updated) setSelectedTire(updated);
-      }).catch(() => {});
+      }).catch(() => { });
     }, 30000);
 
     return () => { socket.disconnect(); socketRef.current = null; clearInterval(poll); };
@@ -129,7 +129,7 @@ export default function Tires() {
               </div>
             </div>
             <div className="mt-3 bg-[rgba(132,189,0,0.22)] border border-[rgba(160,210,90,0.45)] rounded-full px-3 py-1.5 inline-flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded-full bg-[#C7E89B]/50 flex items-center justify-center"><div className="w-2 h-2 rounded-full bg-[#C7E89B]" /></div>
+              <ShieldCheck size={14} className="text-[#C7E89B]" />
               <span className="text-[#C7E89B] font-bold text-[12px]">Rouleur certifié · données vérifiées</span>
             </div>
           </div>
@@ -223,15 +223,18 @@ export default function Tires() {
         {/* Header */}
         <div className="flex items-center justify-between pt-2">
           <h1 className="font-['Archivo'] font-extrabold text-[21px]">Mon équipement</h1>
-          <button className="w-[38px] h-[38px] rounded-[19px] bg-white/14 border border-white/22 backdrop-blur-[7px] flex items-center justify-center">
-            <Plus size={18} />
+          <button
+            onClick={() => setShowAdd(true)}
+            className="w-10 h-10 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-[#FCE500] transition-all active:scale-95"
+          >
+            <Plus size={20} />
           </button>
         </div>
 
         {/* Sensor status bar */}
         <div className="bg-white/10 border border-white/20 backdrop-blur-[11px] rounded-[20px] p-4 shadow-[0_12px_40px_rgba(0,0,0,0.3)] flex items-center gap-3">
-          <div className="w-[42px] h-[42px] rounded-[12px] bg-[rgba(39,80,155,0.4)] border border-[rgba(120,160,230,0.4)] flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-[#27509B]" />
+          <div className="w-[42px] h-[42px] rounded-[12px] bg-[#27509B]/20 border border-[#27509B]/40 flex items-center justify-center">
+            <Bluetooth size={20} className="text-[#8FB8FF] drop-shadow-[0_0_8px_rgba(39,80,155,0.8)]" />
           </div>
           <div className="flex-1">
             <p className="font-bold text-[14px]">{myTires.length} capteurs connectés</p>
