@@ -29,7 +29,6 @@ export default function Friends() {
 
   const progress = challenge ? Math.min(Math.round((challenge.current_progress / challenge.goal) * 100), 100) : 67;
   const currentKm = challenge?.current_progress || 67466;
-  const _goalKm = challenge?.goal || 100000;
   const remaining = challenge?.end_date ? getTimeRemaining(challenge.end_date) : '3j 14h';
   const memberCount = challengeLb.length || friendList.length || 1284;
 
