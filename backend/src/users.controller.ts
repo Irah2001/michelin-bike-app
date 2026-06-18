@@ -196,15 +196,15 @@ export class UsersController {
       .getRawOne();
 
     const tireStats = (() => {
-      const byModel = new Map<string, { name: string; total_km: number; count: number }>();
+      const byModel = new Map<string, { name: string; total_km: number; count: number; purchase_url: string | null }>();
       for (const t of user.tires || []) {
         const name = t.catalog?.name || 'Pneu inconnu';
-        const entry = byModel.get(name) || { name, total_km: 0, count: 0 };
+        const entry = byModel.get(name) || { name, total_km: 0, count: 0, purchase_url: t.catalog?.purchase_url || null };
         entry.total_km += t.total_km;
         entry.count += 1;
         byModel.set(name, entry);
       }
-      return [...byModel.values()].map(e => ({ name: e.name, total_km: Math.round(e.total_km), count: e.count }));
+      return [...byModel.values()].map(e => ({ name: e.name, total_km: Math.round(e.total_km), count: e.count, purchase_url: e.purchase_url }));
     })();
 
     return {
