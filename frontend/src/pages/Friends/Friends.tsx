@@ -45,7 +45,7 @@ export default function Friends() {
       setFriendList(fl as unknown as Friend[]);
       setMe(profile);
 
-      const data = ch?.data || (Array.isArray(ch) ? ch : []);
+      const data = (ch?.data || (Array.isArray(ch) ? ch : [])) as Challenge[];
       const active = data[0];
 
       if (active) {

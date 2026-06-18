@@ -7,6 +7,7 @@ interface PublicTire {
   name: string;
   count: number;
   total_km: number;
+  purchase_url?: string | null;
 }
 
 interface PublicBadge {
