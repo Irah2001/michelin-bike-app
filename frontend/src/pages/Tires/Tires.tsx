@@ -5,29 +5,59 @@ import { io, Socket } from 'socket.io-client';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+interface CatalogItem {
+  id: string;
+  name: string;
+  category: string;
+  usage_type: string;
+}
+
+interface TireItem {
+  id: string;
+  position: 'front' | 'rear';
+  wear_score?: number;
+  total_km?: number;
+  catalog?: CatalogItem;
+}
+
+interface SensorReading {
+  temperature?: number;
+  pressure?: number;
+  battery_pct?: number;
+}
+
+interface LiveDataPayload {
+  front: SensorReading | null;
+  rear: SensorReading | null;
+}
+
+interface TireDetail {
+  sensor_readings?: SensorReading[];
+}
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export default function Tires() {
-  const [myTires, setMyTires] = useState<any[]>([]);
-  const [catalogList, setCatalogList] = useState<any[]>([]);
+  const [myTires, setMyTires] = useState<TireItem[]>([]);
+  const [catalogList, setCatalogList] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [selectedTire, setSelectedTire] = useState<any>(null);
-  const [tireDetail, setTireDetail] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [liveData, setLiveData] = useState<{ front: any; rear: any }>({ front: null, rear: null });
+  const [selectedTire, setSelectedTire] = useState<TireItem | null>(null);
+  const [tireDetail, setTireDetail] = useState<TireDetail | null>(null);
+  const [liveData, setLiveData] = useState<LiveDataPayload>({ front: null, rear: null });
   const [liveTemps, setLiveTemps] = useState<number[]>([]);
+
   const socketRef = useRef<Socket | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    Promise.all([tires.list(), catalog.list()])
+    Promise.all([tires.list<TireItem>(), catalog.list<CatalogItem>()])
       .then(([t, c]) => { setMyTires(t); setCatalogList(c); })
       .catch(console.error)
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      tires.list().then(setMyTires).catch(() => {});
+      tires.list<TireItem>().then(setMyTires).catch(() => { });
     }, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -41,40 +71,39 @@ export default function Tires() {
     }
     const socket = io(BACKEND_URL, { transports: ['websocket'] });
     socketRef.current = socket;
-    socket.on('sensor_reading', (data: { front: any; rear: any }) => {
+    socket.on('sensor_reading', (data: LiveDataPayload) => {
       setLiveData(data);
       const isFront = selectedTire.position === 'front';
       const reading = isFront ? data.front : data.rear;
       if (reading?.temperature) {
-        setLiveTemps(prev => [...prev.slice(-59), reading.temperature]);
+        setLiveTemps(prev => [...prev.slice(-59), reading.temperature as number]);
       }
     });
 
     // Poll tire km/wear every 30s while in detail view
     const poll = setInterval(() => {
-      tires.list().then(list => {
-        const updated = list.find((t: any) => t.id === selectedTire.id);
+      tires.list<TireItem>().then(list => {
+        const updated = list.find((t: TireItem) => t.id === selectedTire.id);
         if (updated) setSelectedTire(updated);
-      }).catch(() => {});
+      }).catch(() => { });
     }, 30000);
 
     return () => { socket.disconnect(); socketRef.current = null; clearInterval(poll); };
-  }, [selectedTire?.id]);
+  }, [selectedTire]);
 
   const handleAdd = (catalogId: string, position: string) => {
-    tires.create({ catalog_id: catalogId, position }).then(t => {
+    tires.create<TireItem>({ catalog_id: catalogId, position }).then(t => {
       setMyTires(prev => [t, ...prev]);
       setShowAdd(false);
     }).catch(console.error);
   };
 
-  const openTireDetail = (tire: any) => {
+  const openTireDetail = (tire: TireItem) => {
     setSelectedTire(tire);
-    setDetailLoading(true);
     setLiveTemps([]);
-    tires.readings(tire.id).then(data => {
+    tires.readings<TireDetail>(tire.id).then(data => {
       setTireDetail(data);
-    }).catch(console.error).finally(() => setDetailLoading(false));
+    }).catch(console.error);
   };
 
   // Leaflet map for last position
@@ -84,7 +113,7 @@ export default function Tires() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     L.circleMarker([45.7796, 3.0869], { radius: 8, color: '#FCE500', fillColor: '#FCE500', fillOpacity: 1, weight: 2 }).addTo(map);
     return () => { map.remove(); };
-  }, [selectedTire?.id]);
+  }, [selectedTire]);
 
   if (loading) return <div className="flex h-full items-center justify-center bg-[#080F22]"><Loader2 className="animate-spin text-[#FCE500]" size={40} /></div>;
 
@@ -97,7 +126,7 @@ export default function Tires() {
     const pressure = live?.pressure ?? lastReading?.pressure ?? 6.2;
     const battery = live?.battery_pct ?? lastReading?.battery_pct ?? 78;
     const wearPct = 100 - (selectedTire.wear_score ?? 77);
-    const kmRemaining = Math.max(0, Math.round((selectedTire.wear_score / 100) * 5000));
+    const kmRemaining = Math.max(0, Math.round((selectedTire.wear_score ?? 77) / 100 * 5000));
     const isOverheat = temp > 65;
 
     return (

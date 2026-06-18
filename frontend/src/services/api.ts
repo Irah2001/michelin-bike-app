@@ -14,7 +14,7 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
     window.location.href = '/';
   }
   if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 // Auth
@@ -27,77 +27,77 @@ export const auth = {
 
 // Users
 export const users = {
-  me: () => request<any>('/users/me'),
-  badges: () => request<any[]>('/users/me/badges'),
-  completeOnboarding: () => request<any>('/users/me/onboarding', { method: 'PATCH' }),
-  getPublicProfile: (id: string) => request<any>(`/users/${id}`),
-  leaderboard: (params?: { country?: string; region?: string; limit?: number; filter?: 'global' | 'friends'; sort?: 'xp' | 'km' }) => {
+  me: <T = Record<string, unknown>>() => request<T>('/users/me'),
+  badges: <T = Record<string, unknown>>() => request<T[]>('/users/me/badges'),
+  completeOnboarding: <T = Record<string, unknown>>() => request<T>('/users/me/onboarding', { method: 'PATCH' }),
+  getPublicProfile: <T = Record<string, unknown>>(id: string) => request<T>(`/users/${id}`),
+  leaderboard: <T = Record<string, unknown>>(params?: { country?: string; region?: string; limit?: number; filter?: 'global' | 'friends'; sort?: 'xp' | 'km' }) => {
     const q = new URLSearchParams();
     if (params?.country) q.set('country', params.country);
     if (params?.region) q.set('region', params.region);
     if (params?.limit) q.set('limit', String(params.limit));
     if (params?.filter) q.set('filter', params.filter);
     if (params?.sort) q.set('sort', params.sort);
-    return request<any[]>(`/users/leaderboard?${q}`);
+    return request<T[]>(`/users/leaderboard?${q}`);
   },
 };
 
 // Friends
 export const friends = {
   getCode: () => request<{ friend_code: string }>('/friends/code'),
-  add: (code: string) => request<any>('/friends/add', { method: 'POST', body: JSON.stringify({ code }) }),
-  list: () => request<any[]>('/friends'),
-  remove: (id: string) => request<any>(`/friends/${id}`, { method: 'DELETE' }),
+  add: <T = Record<string, unknown>>(code: string) => request<T>('/friends/add', { method: 'POST', body: JSON.stringify({ code }) }),
+  list: <T = Record<string, unknown>>() => request<T[]>('/friends'),
+  remove: <T = Record<string, unknown>>(id: string) => request<T>(`/friends/${id}`, { method: 'DELETE' }),
 };
 
 // Sensor Data
 export const sensorData = {
-  list: (params?: { page?: number; limit?: number; since?: string }) => {
+  list: <T = Record<string, unknown>>(params?: { page?: number; limit?: number; since?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set('page', String(params.page));
     if (params?.limit) q.set('limit', String(params.limit));
     if (params?.since) q.set('since', params.since);
-    return request<any>(`/sensor-data?${q}`);
+    return request<T>(`/sensor-data?${q}`);
   },
-  sync: () => request<any>('/sensor-data/sync', { method: 'POST' }),
+  sync: <T = Record<string, unknown>>() => request<T>('/sensor-data/sync', { method: 'POST' }),
 };
 
 // Tires
 export const tires = {
-  list: () => request<any[]>('/tires'),
-  readings: (id: string) => request<any>(`/tires/${id}/readings`),
-  create: (body: { catalog_id: string; position: string }) =>
-    request<any>('/tires', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id: string, body: { is_active?: boolean }) =>
-    request<any>(`/tires/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-  remove: (id: string) => request<any>(`/tires/${id}`, { method: 'DELETE' }),
+  list: <T = Record<string, unknown>>() => request<T[]>('/tires'),
+  readings: <T = Record<string, unknown>>(id: string) => request<T>(`/tires/${id}/readings`),
+  create: <T = Record<string, unknown>>(body: { catalog_id: string; position: string }) =>
+    request<T>('/tires', { method: 'POST', body: JSON.stringify(body) }),
+  update: <T = Record<string, unknown>>(id: string, body: { is_active?: boolean }) =>
+    request<T>(`/tires/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  remove: <T = Record<string, unknown>>(id: string) => request<T>(`/tires/${id}`, { method: 'DELETE' }),
 };
 
 // Catalog
 export const catalog = {
-  list: () => request<any[]>('/catalog'),
-  recommend: (usage?: string) => request<any[]>(`/catalog/recommend${usage ? `?usage=${usage}` : ''}`),
-  get: (id: string) => request<any>(`/catalog/${id}`),
+  list: <T = Record<string, unknown>>() => request<T[]>('/catalog'),
+  recommend: <T = Record<string, unknown>>(usage?: string) => request<T[]>(`/catalog/recommend${usage ? `?usage=${usage}` : ''}`),
+  get: <T = Record<string, unknown>>(id: string) => request<T>(`/catalog/${id}`),
 };
 
 // Challenges
 export const challenges = {
-  list: (page = 1, limit = 20) => request<any>(`/challenges?page=${page}&limit=${limit}`),
-  create: (body: { title: string; description?: string; type: string; goal: number; end_date: string }) =>
-    request<any>('/challenges', { method: 'POST', body: JSON.stringify(body) }),
-  join: (id: string) => request<any>(`/challenges/${id}/join`, { method: 'POST' }),
-  leaderboard: (id: string) => request<any[]>(`/challenges/${id}/leaderboard`),
+  list: <T = Record<string, unknown>>(page = 1, limit = 20) => request<T>(`/challenges?page=${page}&limit=${limit}`),
+  create: <T = Record<string, unknown>>(body: { title: string; description?: string; type: string; goal: number; end_date: string }) =>
+    request<T>('/challenges', { method: 'POST', body: JSON.stringify(body) }),
+  join: <T = Record<string, unknown>>(id: string) => request<T>(`/challenges/${id}/join`, { method: 'POST' }),
+  leaderboard: <T = Record<string, unknown>>(id: string) => request<T[]>(`/challenges/${id}/leaderboard`),
 };
 
 // Tips
 export const tips = {
-  list: () => request<any[]>('/tips'),
-  forecast: () => request<any>('/tips/forecast'),
+  list: <T = Record<string, unknown>>() => request<T[]>('/tips'),
+  forecast: <T = Record<string, unknown>>() => request<T>('/tips/forecast'),
 };
 
 // Ride readings (GPS)
 export const rideReadings = {
-  get: (rideId: string) => request<any[]>(`/ride-readings/${rideId}`),
+  get: <T = Record<string, unknown>>(rideId: string) => request<T[]>(`/ride-readings/${rideId}`),
 };
 
 // Strava

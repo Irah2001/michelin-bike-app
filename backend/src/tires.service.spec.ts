@@ -3,12 +3,18 @@ import { TiresService } from './tires.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Tire } from './entities/tire.entity';
 import { Catalog } from './entities/catalog.entity';
+import { SensorRecord } from './entities/sensor-record.entity';
+import { SensorReading } from './entities/sensor-reading.entity';
+import { Ride } from './entities/ride.entity';
 import { NotFoundException } from '@nestjs/common';
 
 describe('TiresService', () => {
   let service: TiresService;
   let tireRepo: any;
   let catalogRepo: any;
+  let sensorRecordRepo: any;
+  let sensorReadingRepo: any;
+  let rideRepo: any;
 
   beforeEach(async () => {
     tireRepo = {
@@ -18,12 +24,18 @@ describe('TiresService', () => {
       save: jest.fn((tire) => Promise.resolve({ id: 'tire-1', ...tire })),
     };
     catalogRepo = { findOne: jest.fn() };
+    sensorRecordRepo = { find: jest.fn() };
+    sensorReadingRepo = { find: jest.fn() };
+    rideRepo = { find: jest.fn() };
 
     const module = await Test.createTestingModule({
       providers: [
         TiresService,
         { provide: getRepositoryToken(Tire), useValue: tireRepo },
         { provide: getRepositoryToken(Catalog), useValue: catalogRepo },
+        { provide: getRepositoryToken(SensorRecord), useValue: sensorRecordRepo },
+        { provide: getRepositoryToken(SensorReading), useValue: sensorReadingRepo },
+        { provide: getRepositoryToken(Ride), useValue: rideRepo },
       ],
     }).compile();
 

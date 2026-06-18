@@ -12,7 +12,7 @@ export default function Login() {
         navigate(me.has_completed_onboarding ? '/tires' : '/onboarding', { replace: true });
       }).catch(() => localStorage.removeItem('token'));
     }
-  }, []);
+  }, [navigate]);
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });

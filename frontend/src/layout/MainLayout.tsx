@@ -5,28 +5,29 @@ import { useEffect } from 'react';
 const API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export function MainLayout() {
-  if (!localStorage.getItem('token')) return <Navigate to="/" replace />;
-
   // Auto-start simulator on app open, stop on close
   useEffect(() => {
     const token = localStorage.getItem('token');
     let userId: string | undefined;
     if (token) {
-      try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch {}
+      try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { console.warn('Token illisible', e); }
     }
     fetch(`${API}/simulator/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId }),
-    }).catch(() => {});
+    }).catch((error) => console.warn("Erreur démarrage simulateur", error));
 
     const stopSim = () => { navigator.sendBeacon?.(`${API}/simulator/stop`); };
     window.addEventListener('beforeunload', stopSim);
     return () => {
       window.removeEventListener('beforeunload', stopSim);
-      fetch(`${API}/simulator/stop`, { method: 'POST' }).catch(() => {});
+      fetch(`${API}/simulator/stop`, { method: 'POST' })
+        .catch((error) => console.warn("Erreur arrêt simulateur", error));
     };
   }, []);
+
+  if (!localStorage.getItem('token')) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-[#0B1120] text-white flex justify-center selection:bg-[#FCE500] selection:text-black">

@@ -16,6 +16,7 @@ describe('ChallengesService', () => {
       findOne: jest.fn(),
       create: jest.fn((dto) => dto),
       save: jest.fn((c) => Promise.resolve({ id: 'ch-1', ...c })),
+      findAndCount: jest.fn().mockResolvedValue([[], 0])
     };
     participantRepo = {
       find: jest.fn(),
@@ -37,9 +38,11 @@ describe('ChallengesService', () => {
 
   describe('findAll', () => {
     it('should return active challenges', async () => {
-      challengeRepo.find.mockResolvedValue([{ id: 'ch-1', title: 'Test' }]);
+      challengeRepo.findAndCount.mockResolvedValue([[{ id: 'ch-1', title: 'Test' }], 1]);
       const result = await service.findAll();
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('ch-1');
+      expect(result.total).toBe(1);
     });
   });
 

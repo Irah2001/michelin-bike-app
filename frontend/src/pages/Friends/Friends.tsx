@@ -2,25 +2,57 @@ import { useEffect, useState } from 'react';
 import { Loader2, Users, ShieldCheck, ChevronRight } from 'lucide-react';
 import { friends, users, challenges } from '../../services/api';
 
+interface UserProfile {
+  id: string;
+  name: string;
+}
+
+interface Friend {
+  id: string;
+  name: string;
+  rank?: number;
+  km?: number;
+  distance?: number;
+}
+
+interface LeaderboardEntry {
+  user_id: string;
+  rank: number;
+  km: number;
+}
+
+interface Challenge {
+  id: string;
+  title: string;
+  current_progress: number;
+  goal: number;
+  end_date: string;
+}
+
 export default function Friends() {
   const [loading, setLoading] = useState(true);
-  const [friendList, setFriendList] = useState<any[]>([]);
-  const [me, setMe] = useState<any>(null);
-  const [challenge, setChallenge] = useState<any>(null);
-  const [challengeLb, setChallengeLb] = useState<any[]>([]);
+  const [friendList, setFriendList] = useState<Friend[]>([]);
+  const [me, setMe] = useState<UserProfile | null>(null);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [challengeLb, setChallengeLb] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     Promise.all([
-      friends.list(),
-      users.me(),
-      challenges.list(1, 1),
+      friends.list<Friend[]>(),
+      users.me<UserProfile>(),
+      challenges.list<{ data: Challenge[] }>(1, 1),
     ]).then(([fl, profile, ch]) => {
-      setFriendList(fl);
+      setFriendList(fl as unknown as Friend[]);
       setMe(profile);
-      const active = ch?.data?.[0] || ch?.[0];
+
+      const data = ch?.data || (Array.isArray(ch) ? ch : []);
+      const active = data[0];
+
       if (active) {
         setChallenge(active);
-        challenges.leaderboard(active.id).then(setChallengeLb).catch(() => {});
+        challenges.leaderboard<LeaderboardEntry[]>(active.id)
+          .then((lb) => setChallengeLb(lb as unknown as LeaderboardEntry[]))
+          .catch(() => { });
       }
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
@@ -29,24 +61,23 @@ export default function Friends() {
 
   const progress = challenge ? Math.min(Math.round((challenge.current_progress / challenge.goal) * 100), 100) : 67;
   const currentKm = challenge?.current_progress || 67466;
-  const goalKm = challenge?.goal || 100000;
   const remaining = challenge?.end_date ? getTimeRemaining(challenge.end_date) : '3j 14h';
   const memberCount = challengeLb.length || friendList.length || 1284;
 
   // Build leaderboard from challenge lb or friends
-  const leaderboard = challengeLb.length > 0
-    ? challengeLb.slice(0, 5)
-    : friendList.slice(0, 5).map((f, i) => ({ ...f, rank: i + 1, km: Math.round(Math.random() * 500 + 100) }));
+  const leaderboard: Friend[] = challengeLb.length > 0
+    ? challengeLb.slice(0, 5).map(lb => ({ id: lb.user_id, name: `User ${lb.user_id}`, rank: lb.rank, km: lb.km }))
+    : friendList.slice(0, 5).map((f, i) => ({ ...f, rank: i + 1, km: 500 - (i * 75) }));
 
-  const myRank = challengeLb.find((e: any) => e.user_id === me?.id)?.rank || 41;
-  const myKm = challengeLb.find((e: any) => e.user_id === me?.id)?.km || 184;
-  const initials = me?.name?.split(' ').map((n: string) => n[0]?.toUpperCase()).join('').slice(0, 2) || 'CR';
+  const myRank = challengeLb.find(e => e.user_id === me?.id)?.rank || 41;
+  const myKm = challengeLb.find(e => e.user_id === me?.id)?.km || 184;
+  const initials = me?.name?.split(' ').map(n => n[0]?.toUpperCase()).join('').slice(0, 2) || 'CR';
 
   return (
     <div className="min-h-screen text-white relative overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0 bg-[url('/images/bg-community.png')] bg-cover bg-center" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#081026]/32 via-[#081026]/18 to-[#081026]/94" />
+      <div className="absolute inset-0 bg-linear-to-b from-[#081026]/32 via-[#081026]/18 to-[#081026]/94" />
 
       <div className="relative w-full p-5 flex flex-col gap-5 overflow-y-auto pb-28">
         {/* Header pill */}
@@ -55,20 +86,20 @@ export default function Friends() {
             <Users size={15} />
             <span className="font-semibold text-[12px]">Communautés</span>
           </div>
-          <button className="w-[38px] h-[38px] rounded-[19px] bg-white/14 border border-white/22 backdrop-blur-[7px] flex items-center justify-center">
+          <button className="w-9.5 h-9.5 rounded-[19px] bg-white/14 border border-white/22 backdrop-blur-[7px] flex items-center justify-center">
             <ChevronRight size={18} />
           </button>
         </div>
 
         {/* Collective Challenge Card */}
-        <div className="bg-[rgba(10,17,38,0.5)] border border-white/16 backdrop-blur-[12px] rounded-[22px] p-5 shadow-[0_14px_44px_rgba(0,0,0,0.34)] relative overflow-hidden">
+        <div className="bg-[rgba(10,17,38,0.5)] border border-white/16 backdrop-blur-md rounded-[22px] p-5 shadow-[0_14px_44px_rgba(0,0,0,0.34)] relative overflow-hidden">
           {/* Glow */}
-          <div className="absolute -top-10 -right-10 w-[130px] h-[130px] rounded-full bg-[radial-gradient(circle,rgba(252,229,0,0.22)_0%,transparent_70%)]" />
+          <div className="absolute -top-10 -right-10 w-32.5 h-32.5 rounded-full bg-[radial-gradient(circle,rgba(252,229,0,0.22)_0%,transparent_70%)]" />
 
           <div className="flex items-center justify-between mb-3">
             <p className="text-[#FCE500] font-bold text-[10px] uppercase tracking-[0.14em]">Défi collectif en cours</p>
             <div className="flex items-center gap-1.5">
-              <div className="w-[7px] h-[7px] rounded-full bg-[#FF5B5B] opacity-40 animate-pulse" />
+              <div className="w-1.75 h-1.75 rounded-full bg-[#FF5B5B] opacity-40 animate-pulse" />
               <span className="text-white/75 font-bold text-[10.5px]">LIVE</span>
             </div>
           </div>
@@ -156,7 +187,7 @@ export default function Friends() {
 
         <div className="bg-white/8 border border-white/16 backdrop-blur-[10px] rounded-[18px] p-4 shadow-[0_10px_32px_rgba(0,0,0,0.26)]">
           <div className="flex flex-col gap-3">
-            {leaderboard.map((member: any, i: number) => (
+            {leaderboard.map((member, i) => (
               <LeaderRow
                 key={member.id || i}
                 rank={member.rank || i + 1}
