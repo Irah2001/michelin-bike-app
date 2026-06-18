@@ -3,16 +3,50 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, ChevronLeft, MapPin, ShieldCheck, Trophy, CircleDot } from 'lucide-react';
 import { users } from '../../services/api';
 
+interface PublicTire {
+  name: string;
+  count: number;
+  total_km: number;
+}
+
+interface PublicBadge {
+  id: string;
+  name: string;
+  image_url: string;
+}
+
+interface PublicStats {
+  total_km: number;
+  total_elevation: number;
+  max_speed: number;
+  total_hours: number;
+}
+
+interface PublicProfileData {
+  name: string;
+  city?: string;
+  region?: string;
+  level: number;
+  level_name: string;
+  is_ambassador: boolean;
+  stats?: PublicStats;
+  tires?: PublicTire[];
+  badges?: PublicBadge[];
+}
+
 export default function PublicProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<PublicProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    users.getPublicProfile(id).then(setProfile).catch(() => navigate(-1)).finally(() => setLoading(false));
-  }, [id]);
+    users.getPublicProfile(id)
+      .then((data) => setProfile(data as unknown as PublicProfileData))
+      .catch(() => navigate(-1))
+      .finally(() => setLoading(false));
+  }, [id, navigate]);
 
   if (loading || !profile) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-[#FCE500]" size={40} /></div>;
 
@@ -72,13 +106,13 @@ export default function PublicProfile() {
         )}
 
         {/* Tires */}
-        {profile.tires?.length > 0 && (
+        {profile.tires && profile.tires.length > 0 && (
           <div>
             <h3 className="font-archivo font-bold text-[15px] mb-3 flex items-center gap-2">
               <CircleDot size={16} className="text-[#FCE500]" /> Pneus utilisés
             </h3>
             <div className="flex flex-col gap-2">
-              {profile.tires.map((t: any, i: number) => (
+              {profile.tires.map((t, i) => (
                 <div key={i} className="bg-white/8 border border-white/14 backdrop-blur-[10px] rounded-[14px] p-3 flex items-center justify-between">
                   <div>
                     <p className="font-bold text-[13px]">{t.name}</p>
@@ -94,13 +128,13 @@ export default function PublicProfile() {
         )}
 
         {/* Badges */}
-        {profile.badges?.length > 0 && (
+        {profile.badges && profile.badges.length > 0 && (
           <div>
             <h3 className="font-archivo font-bold text-[15px] mb-3 flex items-center gap-2">
               <Trophy size={16} className="text-[#FCE500]" /> Badges ({profile.badges.length})
             </h3>
             <div className="grid grid-cols-3 gap-2">
-              {profile.badges.map((b: any) => (
+              {profile.badges.map((b) => (
                 <div key={b.id} className="bg-white/10 border border-[rgba(252,229,0,0.3)] rounded-[14px] p-3 text-center">
                   <p className="text-lg mb-1">{b.image_url}</p>
                   <p className="text-[10px] font-semibold">{b.name}</p>

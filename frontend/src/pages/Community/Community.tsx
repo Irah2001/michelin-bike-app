@@ -3,7 +3,7 @@ import { MoreVertical, Loader2 } from 'lucide-react';
 import { AmbassadorCard } from './components/AmbassadorCard';
 import { ChallengeCard } from './components/ChallengeCard';
 import { challenges, users } from '../../services/api';
-import type { AmbassadorProfile, CollectiveChallenge } from '../../types';
+import type { AmbassadorProfile, CollectiveChallenge, ApiChallenge } from '../../types';
 
 function getTimeRemaining(endDate: string): string {
   const diff = new Date(endDate).getTime() - Date.now();
@@ -19,43 +19,61 @@ export default function Community() {
   const [challenge, setChallenge] = useState<CollectiveChallenge | null>(null);
 
   useEffect(() => {
-    challenges.list(1, 1).then(async (res) => {
-      const data = res?.data || res || [];
-      const active = data[0];
+    challenges.list<{ data: CollectiveChallenge[] }>(1, 1).then(async (res) => {
+      const data = res?.data || (Array.isArray(res) ? res : []);
+      const active: ApiChallenge | undefined = data[0];
+
       if (active) {
-        const pct = active.target_km > 0 ? Math.min(100, Math.round((active.current_km / active.target_km) * 100)) : 0;
+        const pct = active.target_km > 0
+          ? Math.min(100, Math.round((active.current_km / active.target_km) * 100))
+          : 0;
+
         setChallenge({
-          id: active.id,
+          id: active.id as string,
           typeLabel: 'Défi collectif en cours',
           isLive: true,
-          title: active.title,
-          currentValue: Math.round(active.current_km),
-          targetValue: active.target_km,
+          title: active.title as string,
+          current_km: active.current_km as number,
+          target_km: active.target_km as number,
+          end_date: active.end_date as string,
+          participant_count: active.participant_count as number,
+          is_participant: active.is_participant as boolean,
+          currentValue: Math.round(active.current_km || 0),
+          targetValue: active.target_km as number,
           unitLabel: 'kilomètres parcourus collectivement',
           stats: {
             percentage: pct,
-            timeLeft: getTimeRemaining(active.end_date),
+            timeLeft: getTimeRemaining(active.end_date as string),
             ridersCount: active.participant_count || 0,
           },
         });
 
         if (active.created_by) {
           try {
-            const creator = await users.getPublicProfile(active.created_by);
-            setAmbassador({
+            const creator = await users.getPublicProfile<AmbassadorProfile>(active.created_by);
+            const formattedAmbassador: AmbassadorProfile = {
               id: creator.id,
+              name: creator.name,
+              is_ambassador: creator.is_ambassador,
+              level_name: creator.level_name,
+              city: creator.city,
+              region: creator.region,
+              best_distance_km: creator.best_distance_km,
+              best_elevation_m: creator.best_elevation_m,
               roleLabel: 'Ambassadeur Michelin',
               isStatsVerified: creator.is_ambassador,
-              name: creator.name,
               isVerifiedUser: creator.is_ambassador,
               description: `${creator.level_name} · ${creator.city || creator.region || 'France'}`,
               stats: {
                 seasonKm: Math.round(creator.best_distance_km || 0).toLocaleString(),
                 seasonElevation: Math.round(creator.best_elevation_m || 0).toLocaleString(),
                 membersCount: String(active.participant_count || 0),
-              },
-            });
-          } catch {}
+              }
+            };
+            setAmbassador(formattedAmbassador);
+          } catch (error) {
+            console.warn("Impossible de charger le profil de l'ambassadeur :", error);
+          }
         }
       }
     }).catch(console.error).finally(() => setLoading(false));

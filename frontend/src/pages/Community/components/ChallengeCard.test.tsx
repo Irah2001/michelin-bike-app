@@ -13,6 +13,11 @@ describe('ChallengeCard Component', () => {
         currentValue: 67466,
         targetValue: 100000,
         unitLabel: 'kilomètres parcourus',
+        current_km: 67466,
+        target_km: 100000,
+        end_date: '2026-06-25T00:00:00Z',
+        participant_count: 1284,
+        is_participant: false,
         stats: {
             percentage: 67,
             timeLeft: '3j 14h',
