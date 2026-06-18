@@ -11,6 +11,8 @@ export interface UserProfile {
   isCertified: boolean;
   badge?: string;
   sensorType: string;
+  avatarUrl?: string;
+  levelImage?: string;
 }
 
 export interface UserStats {
@@ -18,20 +20,32 @@ export interface UserStats {
   totalElevation: number;
   maxSpeed: number;
   timeInSaddle: number;
+  timeUnit?: string;
 }
 
 export interface Badge {
   id: string;
   iconName: string;
   label: string;
+  description?: string;
   unlocked: boolean;
+  progress?: number;
+  current?: number;
+  target?: number;
+  unit?: string;
 }
 
 export interface AmbassadorProfile {
   id: string;
+  name: string;
+  is_ambassador: boolean;
+  level_name: string;
+  city?: string;
+  region?: string;
+  best_distance_km: number;
+  best_elevation_m: number;
   roleLabel: string;
   isStatsVerified: boolean;
-  name: string;
   isVerifiedUser: boolean;
   description: string;
   stats: {
@@ -46,6 +60,11 @@ export interface CollectiveChallenge {
   typeLabel: string;
   isLive: boolean;
   title: string;
+  current_km: number;
+  target_km: number;
+  end_date: string;
+  participant_count: number;
+  is_participant: boolean;
   currentValue: number;
   targetValue: number;
   unitLabel: string;
@@ -54,4 +73,15 @@ export interface CollectiveChallenge {
     timeLeft: string;
     ridersCount: number;
   };
+}
+
+export interface ApiChallenge {
+  id: string;
+  title: string;
+  current_km: number;
+  target_km: number;
+  end_date: string;
+  participant_count: number;
+  is_participant: boolean;
+  created_by?: string;
 }

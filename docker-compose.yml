@@ -1,6 +1,6 @@
 services:
   database:
-    image: postgres:15-alpine
+    image: timescale/timescaledb-ha:pg15-latest
     container_name: michelin_db
     restart: always
     env_file:
@@ -13,6 +13,7 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   pgdata:

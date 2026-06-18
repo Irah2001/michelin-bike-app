@@ -1,9 +1,13 @@
 import { Controller, Get, Query, Headers, Param, Redirect } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { StravaService } from './strava.service';
 
 @Controller('strava')
 export class StravaController {
-  constructor(private readonly stravaService: StravaService) {}
+  constructor(
+    private readonly stravaService: StravaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Get('login')
   @Redirect()
@@ -12,8 +16,13 @@ export class StravaController {
   }
 
   @Get('callback')
+  @Redirect()
   async callback(@Query('code') code: string) {
-    return this.stravaService.exchangeToken(code);
+    const tokenData = await this.stravaService.exchangeToken(code);
+    const user = await this.stravaService.findOrCreateUser(tokenData);
+    const access_token = this.jwtService.sign({ sub: user.id, email: user.email });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return { url: `${frontendUrl}/strava/callback?token=${access_token}` };
   }
 
   @Get('refresh')
