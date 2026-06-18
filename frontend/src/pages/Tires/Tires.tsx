@@ -14,7 +14,6 @@ export default function Tires() {
   const [showAdd, setShowAdd] = useState(false);
   const [selectedTire, setSelectedTire] = useState<any>(null);
   const [tireDetail, setTireDetail] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [liveData, setLiveData] = useState<{ front: any; rear: any }>({ front: null, rear: null });
   const [liveTemps, setLiveTemps] = useState<number[]>([]);
   const socketRef = useRef<Socket | null>(null);
@@ -70,11 +69,10 @@ export default function Tires() {
 
   const openTireDetail = (tire: any) => {
     setSelectedTire(tire);
-    setDetailLoading(true);
     setLiveTemps([]);
     tires.readings(tire.id).then(data => {
       setTireDetail(data);
-    }).catch(console.error).finally(() => setDetailLoading(false));
+    }).catch(console.error);
   };
 
   // Leaflet map for last position

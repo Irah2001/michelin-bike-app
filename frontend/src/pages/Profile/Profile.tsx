@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Repeat, Mountain, Gauge, Clock, Trophy, Timer, ShieldCheck, Zap, Settings2, Loader2, AlertTriangle, ChevronRight, MapPin, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Repeat, Mountain, Gauge, Clock, Trophy, Timer, ShieldCheck, Zap, Settings2, Loader2, ChevronRight, MapPin, Check } from 'lucide-react';
 import { useProfileData } from '../../hooks/useProfileData';
 import { PROFILE_TABS } from '../../constants';
-import { users, tires as tiresApi } from '../../services/api';
+import { users } from '../../services/api';
 
 const iconMap: Record<string, React.ReactNode> = {
     Trophy: <Trophy size={24} />,
@@ -15,18 +14,10 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export default function Profile() {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<(typeof PROFILE_TABS)[number]>('All-time');
     const { user, stats, badges, isLoading } = useProfileData(activeTab);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
-    const [wornTire, setWornTire] = useState(false);
-
-    useEffect(() => {
-        tiresApi.list().then(tires => {
-            setWornTire(tires.some((t: any) => t.is_active && (t.wear_score ?? 100) < 30));
-        }).catch(() => {});
-    }, []);
 
     const openLeaderboard = () => {
         setShowLeaderboard(true);
