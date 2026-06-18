@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Bike, User } from 'lucide-react';
+import { LayoutDashboard, Bike, User, Users } from 'lucide-react';
 
 export function MainLayout() {
     return (
@@ -13,6 +13,7 @@ export function MainLayout() {
                     <div className="flex justify-between items-center bg-white/10 backdrop-blur-xl border border-white/15 px-6 py-4 rounded-3xl shadow-2xl">
                         <NavItem to="/dashboard" icon={<LayoutDashboard size={22} />} label="Bord" />
                         <NavItem to="/ride" icon={<Bike size={24} />} label="Ride" isCenter />
+                        <NavItem to="/community" icon={<Users size={22} />} label="Communauté" />
                         <NavItem to="/profile" icon={<User size={22} />} label="Profil" />
                     </div>
                 </div>
