@@ -68,7 +68,7 @@ export default function Profile() {
         <div className="min-h-screen bg-[#0B1120] text-white font-sans selection:bg-[#FCE500] selection:text-black relative overflow-hidden flex justify-center">
             {/* Background images */}
             <div className="absolute inset-0 bg-[url('/images/bg-profile.jpg')] bg-cover bg-center opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#081026]/50 via-[#081026]/70 to-[#0B1120]" />
+            <div className="absolute inset-0 bg-linear-to-b from-[#0B1120]/30 via-[#0B1120]/60 to-[#0B1120]" />
 
             <div className="relative w-full max-w-md p-6 flex flex-col gap-6 z-10 overflow-y-auto pb-28">
 
@@ -171,7 +171,11 @@ export default function Profile() {
                             {leaderboard.map((p) => (
                                 <div key={p.id} className={`flex items-center gap-3 bg-white/5 rounded-lg p-2.5 ${p.id === user.id ? 'border border-[#FCE500]/40' : ''}`}>
                                     <span className={`w-6 text-center font-bold text-sm ${p.rank <= 3 ? 'text-[#FCE500]' : 'text-slate-400'}`}>{p.rank}</span>
-                                    <span className="text-sm flex-1 truncate">{p.name}</span>
+                                    <span className="text-sm flex-1 truncate">
+                                        <div onClick={() => navigate(`/profile/${p.id}`)}>
+                                            {p.name}
+                                        </div>
+                                    </span>
                                     <span className="text-xs text-slate-400 shrink-0">{p.total_km || 0} km</span>
                                 </div>
                             ))}

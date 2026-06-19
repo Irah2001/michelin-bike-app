@@ -121,11 +121,9 @@ export default function PublicProfile() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="font-archivo font-bold text-[14px] text-[#FCE500]">{t.total_km.toLocaleString()} km</p>
-                    {t.purchase_url && (
-                      <a href={t.purchase_url} target="_blank" rel="noopener noreferrer" className="bg-[#FCE500] text-[#11264F] px-2.5 py-1 rounded-[8px] font-bold text-[10px]">
-                        Acheter
-                      </a>
-                    )}
+                    <a target="_blank" rel="noopener noreferrer" className="bg-[#FCE500] text-[#11264F] px-2.5 py-1 rounded-[8px] font-bold text-[10px]">
+                      Acheter
+                    </a>
                   </div>
                 </div>
               ))}

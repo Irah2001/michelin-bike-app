@@ -82,8 +82,9 @@ export default function Community() {
   if (loading) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-[#FCE500]" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-black bg-[url('/images/bg-community.png')] bg-cover bg-center bg-no-repeat bg-fixed flex flex-col relative">
-      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/images/bg-community.png')] bg-cover bg-center opacity-60 blur-xs scale-105 origin-center pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-b from-black/10 via-black/50 to-black/90 pointer-events-none" />
 
       <header className="relative z-10 flex items-center justify-between p-6 pt-12">
         <h1 className="text-2xl font-bold">Communautés</h1>

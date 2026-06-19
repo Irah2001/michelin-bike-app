@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
-import { CircleDot, Swords, User, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, CircleDot, Swords, User, Lightbulb } from 'lucide-react';
 import { useEffect } from 'react';
 
 const API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
@@ -48,6 +48,7 @@ export function MainLayout() {
 
         <div className="absolute bottom-0 w-full px-4 pb-6 pt-12 bg-gradient-to-t from-[#080F22] via-[#0B1120]/90 to-transparent z-50 pointer-events-none">
           <div className="flex w-full justify-between items-center bg-[#1A233A]/80 backdrop-blur-2xl border border-white/10 p-2 rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5)] pointer-events-auto relative">
+            <NavItem to="/dashboard" icon={<LayoutDashboard size={24} />} label="Accueil" />
             <NavItem to="/tips" icon={<Lightbulb size={24} />} label="Conseils" />
             <NavItem to="/tires" icon={<CircleDot size={24} />} label="Pneus" />
             <NavItem to="/challenges" icon={<Swords size={24} />} label="Défis" />
